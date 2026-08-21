@@ -93,7 +93,6 @@ input:focus,select:focus{outline:none;border-color:var(--clay-rose);background:v
 .chart-card{margin-top:14px}
 .chart-wrap{position:relative;height:320px;margin-top:8px}
 @media(max-width:640px){.chart-wrap{height:250px}}
-
 /* records */
 .grid.records{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-top:14px}
 .rec-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
@@ -176,6 +175,29 @@ footer{background:var(--dark);color:var(--blush);margin-top:56px;padding:34px 0}
 footer .container{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 footer .wordmark{color:var(--blush)} footer .wordmark span{color:var(--clay-rose)}
 footer p{font-size:.8rem;color:#B9A49D;margin-left:auto}
+.narrow-only{display:none}
+@media(max-width:640px){
+  /* Phone: tighten the frame, let the header breathe onto a second row,
+     and shrink the history table until all five columns fit unscrolled. */
+  .container,.site-inner{padding-left:14px;padding-right:14px}
+  .site-inner{flex-wrap:wrap;gap:10px}
+  .mark svg{width:32px;height:32px}
+  .wordmark{font-size:1.05rem;white-space:nowrap}
+  .wordmark small{display:none}
+  .head-right{gap:7px}
+  .head-right .btn{padding:5px 9px;font-size:.7rem}
+  .form-grid,.form-grid.one-up{grid-template-columns:1fr;gap:11px}
+  .wide-only{display:none}
+  .narrow-only{display:inline}
+  table{min-width:0;font-size:.79rem}
+  th{padding:9px 5px;font-size:.58rem;letter-spacing:.05em}
+  td{padding:9px 5px}
+  .pod-card{padding:14px 15px;gap:12px}
+  .pod-when{min-width:70px}
+  .pod-when .d{font-size:1.2rem}
+  .pod-main{min-width:120px}
+  .pod-main h3{font-size:1.15rem}
+}
 </style>
 </head>
 <body>
@@ -345,7 +367,13 @@ footer p{font-size:.8rem;color:#B9A49D;margin-left:auto}
       <span class="eyebrow">Every Thursday so far</span>
       <h2>History</h2>
       <div class="table-wrap"><table>
-        <thead><tr><th>Week of</th><th>YouTube</th><th>TikTok</th><th>Instagram</th><th>YT views</th></tr></thead>
+        <thead><tr>
+          <th><span class="wide-only">Week of</span><span class="narrow-only">Week</span></th>
+          <th><span class="wide-only">YouTube</span><span class="narrow-only">YT</span></th>
+          <th><span class="wide-only">TikTok</span><span class="narrow-only">TT</span></th>
+          <th><span class="wide-only">Instagram</span><span class="narrow-only">IG</span></th>
+          <th><span class="wide-only">YT views</span><span class="narrow-only">Views</span></th>
+        </tr></thead>
         <tbody id="historyBody"></tbody>
       </table></div>
     </section>
@@ -405,6 +433,10 @@ function addDays(iso, n){
 function fmtDate(iso){
   const [y,m,d] = iso.split('-').map(Number);
   return MONTH_NAMES[m-1].slice(0,3) + ' ' + d + ', ' + y;
+}
+function fmtDateShort(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  return m + '/' + d + '/' + String(y).slice(2);
 }
 function fmtMonth(ym){ const [y,m] = ym.split('-').map(Number); return MONTH_NAMES[m-1] + ' ' + y; }
 function fmtMonthShort(ym){ const [y,m] = ym.split('-').map(Number); return MONTH_NAMES[m-1].slice(0,3) + " '" + String(y).slice(2); }
@@ -500,10 +532,18 @@ function podcastList(pods){
      stage the nearest date leads and undated guests settle at the bottom. */
   const rank = {};
   STAGES.forEach((st,i) => rank[st.key] = i);
-  return active.slice().sort((a,b) =>
-       (rank[normStage(a)] - rank[normStage(b)])
-    || ((a.record_date || '9999-99-99').localeCompare(b.record_date || '9999-99-99'))
-    || a.guest.localeCompare(b.guest));
+  return active.slice().sort((a,b) => {
+    const ra = rank[normStage(a)], rb = rank[normStage(b)];
+    if(ra !== rb) return ra - rb;
+    /* Booked runs by when it happens. Agreed and ideas run by when they were
+       entered, so whoever was added last sits at the bottom of their group. */
+    if(normStage(a) === 'booked'){
+      return (a.record_date || '9999-99-99').localeCompare(b.record_date || '9999-99-99')
+          || (a.created_at || '').localeCompare(b.created_at || '');
+    }
+    return (a.created_at || '').localeCompare(b.created_at || '')
+        || a.guest.localeCompare(b.guest);
+  });
 }
 /*STATS-CORE-END*/
 
@@ -683,7 +723,7 @@ function renderTable(s){
     const badge = r.needs_review ? ' <span class="tag review">check</span>' : (r.auto_at ? ' <span class="tag auto">auto</span>' : '');
     body.insertAdjacentHTML('beforeend', `
       <tr class="wk-row" onclick="toggleNote('${r.week_date}')">
-        <td>${fmtDate(r.week_date)}${badge}</td>
+        <td><span class="wide-only">${fmtDate(r.week_date)}</span><span class="narrow-only">${fmtDateShort(r.week_date)}</span>${badge}</td>
         <td>${cell('youtube')}</td><td>${cell('tiktok')}</td><td>${cell('instagram')}</td>
         <td>${vCell}</td>
       </tr>
@@ -924,7 +964,7 @@ function resetPodForm(){
   editingPod = null;
   const sel = $('pStage');
   if(!sel.options.length) sel.innerHTML = STAGES.map(s => `<option value="${s.key}">${s.label}</option>`).join('');
-  sel.value = 'agreed';
+  sel.value = 'idea';
   $('pGuest').value = ''; $('pFormat').value = ''; $('pDate').value = ''; $('pTime').value = ''; $('pTopic').value = '';
   $('pFormEyebrow').textContent = 'Add a guest';
   $('pFormTitle').textContent = 'New podcast';
