@@ -787,12 +787,23 @@ function resetForm(){
   $('saveBtn').textContent = 'Save week';
   const last = rows.length ? rows[rows.length-1] : null;
   const missed = missedThursdays(rows);
-  $('fDate').value = missed.length ? missed[0] : (last ? addDays(last.week_date, 7) : todayISO());
-  $('fYt').value = last ? last.youtube : '';
-  $('fTt').value = last ? last.tiktok : '';
-  $('fIg').value = last ? last.instagram : '';
-  $('fYtV').value = last && last.youtube_views   != null ? last.youtube_views   : '';
-  $('fNotes').value = '';
+  /* Never sit on a Thursday that hasn't come round yet. If there's a week
+     waiting, offer that; otherwise stay on this week's Thursday so saving
+     updates it instead of quietly opening next week early. */
+  const target = missed.length ? missed[0] : (last ? lastThursday(todayISO()) : todayISO());
+  const onRow = rows.find(r => r.week_date === target);
+  $('fDate').value = target;
+  $('fYt').value = onRow ? onRow.youtube   : (last ? last.youtube   : '');
+  $('fTt').value = onRow ? onRow.tiktok    : (last ? last.tiktok    : '');
+  $('fIg').value = onRow ? onRow.instagram : (last ? last.instagram : '');
+  const vSrc = onRow || last;
+  $('fYtV').value = vSrc && vSrc.youtube_views != null ? vSrc.youtube_views : '';
+  $('fNotes').value = onRow ? (onRow.notes || '') : '';
+  if(onRow){
+    editingDate = target;
+    $('editTag').classList.remove('hidden'); $('deleteBtn').classList.remove('hidden');
+    $('saveBtn').textContent = 'Update week';
+  }
 }
 function editWeek(date){
   const r = rows.find(x => x.week_date === date); if(!r) return;
