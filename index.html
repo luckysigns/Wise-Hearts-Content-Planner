@@ -143,6 +143,11 @@ td .g.up{color:var(--deep-rose)} td .g.down{color:var(--taupe);font-style:italic
 .pipe-item:hover .nm{color:var(--deep-rose)}
 .pipe-item .nm{font-weight:500;font-size:.93rem}
 .pipe-item .sub{font-size:.78rem;color:var(--taupe)}
+.pipe-item .rowbtn{padding:0;margin-top:5px;font-size:.7rem;color:var(--clay-rose)}
+.pipe-item .rowbtn:hover{color:var(--deep-rose)}
+.pod-meta .rowbtn + .rowbtn{margin-left:12px}
+h1 .count{background:var(--blush);color:var(--deep-rose);border-radius:99px;padding:2px 13px;margin-left:12px;
+  font-family:var(--font-body);font-size:.95rem;font-weight:500;vertical-align:middle;font-style:normal}
 .pipe-empty{color:var(--taupe);font-size:.85rem;font-style:italic;padding:10px 0}
 .empty-note{color:var(--taupe);font-size:.9rem;font-style:italic;margin-top:14px;padding:18px 22px;background:var(--cream-warm);border-radius:var(--card-radius)}
 
@@ -232,11 +237,6 @@ footer p{font-size:.8rem;color:#B9A49D;margin-left:auto}
     <button class="btn" id="reviewBtn">Confirm the numbers</button>
   </div>
 
-  <!-- TABS -->
-  <div class="tabs">
-    <button class="tab on" data-tab="numbers">Numbers</button>
-    <button class="tab" data-tab="podcasts">Podcasts <span class="count" id="podCount">0</span></button>
-  </div>
 
   <!-- ============ NUMBERS TAB ============ -->
   <div id="tab-numbers">
@@ -316,11 +316,11 @@ footer p{font-size:.8rem;color:#B9A49D;margin-left:auto}
   </div>
 
   <!-- ============ PODCASTS TAB ============ -->
-  <div id="tab-podcasts" class="hidden">
+  <div id="tab-podcasts">
 
     <section>
       <span class="eyebrow">On the calendar</span>
-      <h1>Upcoming <em>podcasts</em></h1>
+      <h1>Upcoming <em>podcasts</em> <span class="count" id="podCount">0</span></h1>
       <div class="pod-up" id="upcomingList"></div>
     </section>
 
@@ -357,6 +357,7 @@ footer p{font-size:.8rem;color:#B9A49D;margin-left:auto}
         </div>
         <div class="form-actions">
           <button class="btn" id="pSaveBtn">Add to list</button>
+          <button class="btn ghost hidden" id="pRecordedBtn">Mark recorded</button>
           <button class="btn ghost hidden" id="pCancelBtn">Cancel</button>
           <button class="btn ghost hidden" id="pDeleteBtn">Delete</button>
         </div>
@@ -393,11 +394,18 @@ const PLATFORMS = [
   {key:'instagram', viewKey:'instagram_views', label:'Instagram', color:'#8C6F68'}
 ];
 const STAGES = [
-  {key:'idea',        label:'Idea'},
-  {key:'reached_out', label:'Reached out'},
-  {key:'confirmed',   label:'Confirmed'},
-  {key:'recorded',    label:'Recorded'}
+  {key:'agreed', label:'Agreed'},
+  {key:'booked', label:'Booked'}
 ];
+/* Older rows used idea/reached_out/confirmed. Fold them into the two stages
+   we keep: a date on it means booked, anything else is agreed. */
+function normStage(p){
+  const s = String(p.stage || '').toLowerCase();
+  if(s === 'recorded') return 'recorded';
+  if(s === 'booked' || s === 'confirmed') return 'booked';
+  if(s === 'agreed') return 'agreed';
+  return p.record_date ? 'booked' : 'agreed';
+}
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 function addDays(iso, n){
   const [y,m,d] = iso.split('-').map(Number);
@@ -497,14 +505,15 @@ function computeStats(rows){
 }
 function splitPodcasts(pods, today){
   const t = today || todayISO();
-  const upcoming = pods.filter(p => p.record_date && p.record_date >= t && p.stage !== 'recorded')
+  const active = pods.filter(p => normStage(p) !== 'recorded');
+  const upcoming = active.filter(p => p.record_date && p.record_date >= t)
                        .sort((a,b) => (a.record_date + (a.record_time||'')).localeCompare(b.record_date + (b.record_time||'')));
   const upIds = new Set(upcoming.map(p => p.id));
   const byStage = {};
   for(const st of STAGES) byStage[st.key] = [];
-  for(const p of pods){
+  for(const p of active){
     if(upIds.has(p.id)) continue;
-    (byStage[p.stage] || byStage.idea).push(p);
+    (byStage[normStage(p)] || byStage.agreed).push(p);
   }
   for(const k in byStage){
     byStage[k].sort((a,b) => (b.record_date || '').localeCompare(a.record_date || '') || a.guest.localeCompare(b.guest));
@@ -900,7 +909,7 @@ $('syncNowBtn').onclick = async () => {
 /* ---------- podcasts ---------- */
 function renderPodcasts(){
   const {upcoming, byStage} = splitPodcasts(pods);
-  $('podCount').textContent = pods.length;
+  $('podCount').textContent = upcoming.length + Object.values(byStage).reduce((n,l) => n + l.length, 0);
 
   const up = $('upcomingList'); up.innerHTML = '';
   if(!upcoming.length){
@@ -924,6 +933,7 @@ function renderPodcasts(){
             ${when ? `<span class="tag countdown">${when}</span>` : ''}
             ${p.format ? `<span class="tag ${p.format}">${p.format === 'in_person' ? 'In person' : 'Virtual'}</span>` : ''}
             <button class="rowbtn" onclick="editPod('${p.id}')">edit</button>
+            <button class="rowbtn" onclick="markRecorded('${p.id}', event)">recorded</button>
           </div>
         </div>`);
     }
@@ -941,6 +951,7 @@ function renderPodcasts(){
             <div class="sub">${[p.record_date ? fmtDate(p.record_date) : null,
                                 p.format ? (p.format === 'in_person' ? 'In person' : 'Virtual') : null,
                                 p.topic].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</div>
+            <button class="rowbtn" onclick="markRecorded('${p.id}', event)">recorded</button>
           </div>`).join('') : '<div class="pipe-empty">Nobody here yet</div>'}
       </div>`);
   }
@@ -949,24 +960,26 @@ function resetPodForm(){
   editingPod = null;
   const sel = $('pStage');
   if(!sel.options.length) sel.innerHTML = STAGES.map(s => `<option value="${s.key}">${s.label}</option>`).join('');
-  sel.value = 'idea';
+  sel.value = 'agreed';
   $('pGuest').value = ''; $('pFormat').value = ''; $('pDate').value = ''; $('pTime').value = ''; $('pTopic').value = '';
   $('pFormEyebrow').textContent = 'Add a guest';
   $('pFormTitle').textContent = 'New podcast';
   $('pSaveBtn').textContent = 'Add to list';
   $('pCancelBtn').classList.add('hidden'); $('pDeleteBtn').classList.add('hidden');
+  $('pRecordedBtn').classList.add('hidden');
 }
 function editPod(id){
   const p = pods.find(x => String(x.id) === String(id)); if(!p) return;
   showTab('podcasts');
   editingPod = p.id;
-  $('pGuest').value = p.guest || ''; $('pStage').value = p.stage || 'idea';
+  $('pGuest').value = p.guest || ''; $('pStage').value = normStage(p);
   $('pFormat').value = p.format || ''; $('pDate').value = p.record_date || '';
   $('pTime').value = p.record_time ? p.record_time.slice(0,5) : ''; $('pTopic').value = p.topic || '';
   $('pFormEyebrow').textContent = 'Editing';
   $('pFormTitle').textContent = p.guest;
   $('pSaveBtn').textContent = 'Save changes';
   $('pCancelBtn').classList.remove('hidden'); $('pDeleteBtn').classList.remove('hidden');
+  $('pRecordedBtn').classList.remove('hidden');
   window.scrollTo({top: $('pGuest').closest('section').offsetTop - 80, behavior:'smooth'});
 }
 async function savePod(){
@@ -1010,18 +1023,30 @@ async function deletePod(){
   pods = pods.filter(x => String(x.id) !== String(editingPod));
   renderPodcasts(); resetPodForm(); toast('Removed');
 }
+/* Recorded episodes drop off the page. The row stays in Supabase — this only
+   flips the stage, so nothing is thrown away. */
+async function markRecorded(id, ev){
+  if(ev) ev.stopPropagation();
+  const p = pods.find(x => String(x.id) === String(id));
+  if(!p) return;
+  if(connected && podsOk){
+    const {error} = await sb.from('podcasts')
+      .update({stage:'recorded', updated_at:new Date().toISOString()}).eq('id', p.id);
+    if(error){ toast("Couldn't update — " + error.message); return; }
+  }
+  p.stage = 'recorded';
+  if(String(editingPod) === String(p.id)) resetPodForm();
+  renderPodcasts();
+  toast(p.guest + ' recorded — off the list');
+}
+
+$('pRecordedBtn').onclick = () => { if(editingPod) markRecorded(editingPod); };
 $('pSaveBtn').onclick = savePod;
 $('pDeleteBtn').onclick = deletePod;
 $('pCancelBtn').onclick = resetPodForm;
 
 /* ---------- tabs ---------- */
-function showTab(name){
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === name));
-  $('tab-numbers').classList.toggle('hidden', name !== 'numbers');
-  $('tab-podcasts').classList.toggle('hidden', name !== 'podcasts');
-  try{ localStorage.setItem('wh_tab', name); }catch(e){}
-}
-document.querySelectorAll('.tab').forEach(t => t.onclick = () => showTab(t.dataset.tab));
+function showTab(){ /* single page now — nothing to switch */ }
 
 /* ---------- import ---------- */
 $('importBtn').onclick = async () => {
@@ -1062,7 +1087,6 @@ $('connectBtn').onclick = async () => {
 };
 
 /* go */
-try{ const t = localStorage.getItem('wh_tab'); if(t) showTab(t); }catch(e){}
 if(!getCreds()) openSetup();
 init();
 </script>
