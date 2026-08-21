@@ -134,28 +134,23 @@ td .g.up{color:var(--deep-rose)} td .g.down{color:var(--taupe);font-style:italic
 .tag.virtual{background:var(--cream-warm);color:var(--cocoa-soft)}
 .tag.in_person{background:var(--blush);color:var(--deep-rose)}
 .tag.countdown{background:var(--dark);color:var(--blush)}
-.pod-list{margin-top:14px;background:var(--white);border:1px solid var(--blush-deep);border-radius:var(--card-radius);padding:2px 20px;box-shadow:var(--shadow)}
-.pod-row{display:flex;align-items:center;gap:16px;padding:13px 0;border-bottom:1px dashed var(--blush-deep);cursor:pointer}
-.pod-row:last-child{border-bottom:none}
-.pod-row:hover .nm{color:var(--deep-rose)}
-.pod-row .tag{min-width:76px;text-align:center;flex:none}
-.pod-row-main{flex:1;min-width:0}
-.pod-row .nm{font-weight:500;font-size:.95rem}
-.pod-row .sub{font-size:.78rem;color:var(--taupe)}
 .tag.stage-booked{background:var(--deep-rose);color:var(--white)}
 .tag.stage-agreed{background:var(--blush);color:var(--deep-rose)}
 .tag.stage-idea{background:var(--cream-warm);color:var(--taupe)}
-@media(max-width:560px){.pod-row{flex-wrap:wrap;gap:8px}.pod-row-main{flex-basis:100%;order:3}}
+.tag.past{background:var(--cream-warm);color:var(--clay-rose)}
+.pod-when .d.nodate{color:var(--blush-deep)}
+.pod-card.stage-booked{border-left-color:var(--deep-rose)}
+.pod-card.stage-agreed{border-left-color:var(--clay-rose)}
+.pod-card.stage-idea{border-left-color:var(--blush-deep)}
 .form-grid.one-up{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:640px){.form-grid.one-up{grid-template-columns:1fr}}
 .views-counter{margin-top:9px;font-size:.88rem;color:var(--taupe)}
 .views-counter .vc-num{font-family:var(--font-display);font-size:1.2rem;color:var(--deep-rose);margin:0 7px}
-.pod-row .rowbtn{padding:0;font-size:.7rem;color:var(--clay-rose);flex:none}
-.pod-row .rowbtn:hover{color:var(--deep-rose)}
+.pod-meta .rowbtn{color:var(--clay-rose)}
+.pod-meta .rowbtn:hover{color:var(--deep-rose)}
 .pod-meta .rowbtn + .rowbtn{margin-left:12px}
 h1 .count{background:var(--blush);color:var(--deep-rose);border-radius:99px;padding:2px 13px;margin-left:12px;
   font-family:var(--font-body);font-size:.95rem;font-weight:500;vertical-align:middle;font-style:normal}
-.pipe-empty{color:var(--taupe);font-size:.85rem;font-style:italic;padding:10px 0}
 .empty-note{color:var(--taupe);font-size:.9rem;font-style:italic;margin-top:14px;padding:18px 22px;background:var(--cream-warm);border-radius:var(--card-radius)}
 
 /* banners / setup */
@@ -260,24 +255,10 @@ footer p{font-size:.8rem;color:#B9A49D;margin-left:auto}
   <div id="tab-podcasts">
 
     <section>
-      <span class="eyebrow">On the calendar</span>
-      <h1>Upcoming <em>podcasts</em> <span class="count" id="podCount">0</span></h1>
-      <div class="pod-up" id="upcomingList"></div>
-    </section>
-
-    <div class="lotus-divider">
-      <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M30 50 C30 50 10 38 10 24 C10 16 18 10 30 18 C42 10 50 16 50 24 C50 38 30 50 30 50Z" stroke="#D9877B" stroke-width="1" fill="none"/>
-        <path d="M30 50 C30 50 20 35 20 26 C20 20 24 16 30 20 C36 16 40 20 40 26 C40 35 30 50 30 50Z" stroke="#C26F63" stroke-width="1" fill="none"/>
-        <path d="M30 50 L30 18" stroke="#D9877B" stroke-width="0.75" opacity="0.5"/>
-      </svg>
-    </div>
-
-    <section>
       <span class="eyebrow">Who's in the works</span>
-      <h2>The pipeline</h2>
-      <p class="muted">Click anyone to edit or move them along.</p>
-      <div class="pod-list" id="podList"></div>
+      <h1>The <em>podcasts</em> <span class="count" id="podCount">0</span></h1>
+      <p class="muted">Booked first, then agreed, then ideas. Click edit to change anyone, or mark them recorded once it's done.</p>
+      <div class="pod-up" id="podList"></div>
     </section>
 
     <section>
@@ -507,20 +488,16 @@ function computeStats(rows){
   s.totalViewsNow = PLATFORMS.reduce((t,p) => t + (s.views[p.key].current || 0), 0);
   return s;
 }
-function splitPodcasts(pods, today){
-  const t = today || todayISO();
+function podcastList(pods){
   const active = pods.filter(p => normStage(p) !== 'recorded');
-  const upcoming = active.filter(p => p.record_date && p.record_date >= t)
-                       .sort((a,b) => (a.record_date + (a.record_time||'')).localeCompare(b.record_date + (b.record_time||'')));
   /* One list, most committed first — booked, then agreed, then idea. Inside a
      stage the nearest date leads and undated guests settle at the bottom. */
   const rank = {};
   STAGES.forEach((st,i) => rank[st.key] = i);
-  const list = active.slice().sort((a,b) =>
+  return active.slice().sort((a,b) =>
        (rank[normStage(a)] - rank[normStage(b)])
     || ((a.record_date || '9999-99-99').localeCompare(b.record_date || '9999-99-99'))
     || a.guest.localeCompare(b.guest));
-  return {upcoming, list};
 }
 /*STATS-CORE-END*/
 
@@ -902,55 +879,38 @@ $('syncNowBtn').onclick = async () => {
 
 /* ---------- podcasts ---------- */
 function renderPodcasts(){
-  const {upcoming, list} = splitPodcasts(pods);
+  const list = podcastList(pods);
   $('podCount').textContent = list.length;
-
-  const up = $('upcomingList'); up.innerHTML = '';
-  if(!upcoming.length){
-    up.innerHTML = `<p class="empty-note">Nothing on the calendar yet. Give someone a date below and they'll show up here.</p>`;
-  } else {
-    for(const p of upcoming){
-      const d = daysUntil(p.record_date);
-      const when = d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : d < 7 ? 'In ' + d + ' days' : null;
-      const [yy,mm,dd] = p.record_date.split('-').map(Number);
-      up.insertAdjacentHTML('beforeend', `
-        <div class="pod-card${d <= 7 ? ' soon' : ''}">
-          <div class="pod-when">
-            <div class="d">${MONTH_NAMES[mm-1].slice(0,3)} ${dd}</div>
-            <div class="t">${p.record_time ? fmtTime(p.record_time) : String(yy)}</div>
-          </div>
-          <div class="pod-main">
-            <h3>${esc(p.guest)}</h3>
-            ${p.topic ? `<div class="topic">${esc(p.topic)}</div>` : ''}
-          </div>
-          <div class="pod-meta">
-            ${when ? `<span class="tag countdown">${when}</span>` : ''}
-            ${p.format ? `<span class="tag ${p.format}">${p.format === 'in_person' ? 'In person' : 'Virtual'}</span>` : ''}
-            <button class="rowbtn" onclick="editPod('${p.id}')">edit</button>
-            <button class="rowbtn" onclick="markRecorded('${p.id}', event)">recorded</button>
-          </div>
-        </div>`);
-    }
-  }
-
-  const listEl = $('podList'); listEl.innerHTML = '';
+  const el = $('podList'); el.innerHTML = '';
   if(!list.length){
-    listEl.innerHTML = '<div class="pipe-empty">Nobody in the works yet.</div>';
+    el.innerHTML = `<p class="empty-note">Nobody lined up yet. Add someone below and they'll show up here.</p>`;
     return;
   }
   for(const p of list){
     const key = normStage(p);
-    const st = STAGES.find(x => x.key === key);
-    listEl.insertAdjacentHTML('beforeend', `
-      <div class="pod-row" onclick="editPod('${p.id}')">
-        <span class="tag stage-${key}">${st ? st.label : key}</span>
-        <div class="pod-row-main">
-          <div class="nm">${esc(p.guest)}</div>
-          <div class="sub">${[p.record_date ? fmtDate(p.record_date) : null,
-                              p.format ? (p.format === 'in_person' ? 'In person' : 'Virtual') : null,
-                              p.topic].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</div>
+    const st  = STAGES.find(x => x.key === key);
+    const d   = p.record_date ? daysUntil(p.record_date) : null;
+    const when = d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : (d > 1 && d < 7) ? 'In ' + d + ' days' : (d < 0 ? 'Date passed' : null);
+    let whenBlock = '<div class="d nodate">&mdash;</div><div class="t">no date</div>';
+    if(p.record_date){
+      const [yy,mm,dd] = p.record_date.split('-').map(Number);
+      whenBlock = `<div class="d">${MONTH_NAMES[mm-1].slice(0,3)} ${dd}</div>
+            <div class="t">${p.record_time ? fmtTime(p.record_time) : String(yy)}</div>`;
+    }
+    el.insertAdjacentHTML('beforeend', `
+      <div class="pod-card stage-${key}${d != null && d >= 0 && d <= 7 ? ' soon' : ''}">
+        <div class="pod-when">${whenBlock}</div>
+        <div class="pod-main">
+          <h3>${esc(p.guest)}</h3>
+          ${p.topic ? `<div class="topic">${esc(p.topic)}</div>` : ''}
         </div>
-        <button class="rowbtn" onclick="markRecorded('${p.id}', event)">recorded</button>
+        <div class="pod-meta">
+          <span class="tag stage-${key}">${st ? st.label : key}</span>
+          ${when ? `<span class="tag ${d < 0 ? 'past' : 'countdown'}">${when}</span>` : ''}
+          ${p.format ? `<span class="tag ${p.format}">${p.format === 'in_person' ? 'In person' : 'Virtual'}</span>` : ''}
+          <button class="rowbtn" onclick="editPod('${p.id}')">edit</button>
+          <button class="rowbtn" onclick="markRecorded('${p.id}', event)">recorded</button>
+        </div>
       </div>`);
   }
 }
