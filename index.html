@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wise Heart · Content Planner</title>
+<link rel="icon" href='data:image/svg+xml,<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><path d="M30 50 C30 50 10 38 10 24 C10 16 18 10 30 18 C42 10 50 16 50 24 C50 38 30 50 30 50Z" stroke="%23D9877B" stroke-width="3" fill="%23F2D9D2"/></svg>'>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --clay-rose:#D9877B; --deep-rose:#C26F63; --blush:#F2D9D2; --blush-deep:#E9C4BA;
+  --cream:#FBF6F3; --cream-warm:#F5EBE5; --cocoa-ink:#3A2F2C; --cocoa-soft:#5A4A45;
+  --taupe:#8C6F68; --white:#FFFFFF; --dark:#2E2522;
+  --primary:var(--deep-rose); --primary-hover:#a85a4f;
+  --font-display:'Cormorant Garamond',Georgia,serif; --font-body:'Inter',system-ui,sans-serif;
+  --max-w:1100px; --radius:4px; --card-radius:10px;
+  --shadow:0 2px 24px rgba(58,47,44,0.07);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-body);color:var(--cocoa-ink);background:var(--cream);line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--font-display);font-weight:500;line-height:1.2;color:var(--cocoa-ink)}
+h1{font-size:clamp(2rem,5vw,2.9rem)} h1 em{font-style:italic;color:var(--deep-rose)}
+h2{font-size:clamp(1.5rem,3.5vw,2rem);margin-bottom:6px}
+.container{max-width:var(--max-w);margin:0 auto;padding:0 20px}
+.eyebrow{font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;color:var(--clay-rose);display:block;margin-bottom:8px;font-weight:500}
+.muted{color:var(--taupe);font-size:.85rem}
+section{padding:34px 0 6px}
+
+/* header */
+header.site{background:var(--white);border-bottom:1px solid var(--blush-deep);position:sticky;top:0;z-index:50}
+.site-inner{max-width:var(--max-w);margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:14px}
+.mark svg{width:38px;height:38px;display:block}
+.wordmark{font-family:var(--font-display);font-size:1.35rem;font-weight:500;color:var(--deep-rose);letter-spacing:.02em}
+.wordmark span{color:var(--clay-rose)}
+.wordmark small{display:block;font-family:var(--font-body);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--taupe);line-height:1.3}
+.head-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.pill{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border-radius:99px;font-weight:500}
+.pill.ok{background:var(--blush);color:var(--deep-rose)}
+.pill.preview{background:var(--cream-warm);color:var(--taupe)}
+.gear{background:none;border:none;cursor:pointer;color:var(--taupe);font-size:1.05rem;padding:4px}
+.gear:hover{color:var(--deep-rose)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--blush-deep);margin-top:24px}
+.tab{background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;padding:11px 20px;cursor:pointer;font-family:var(--font-body);font-size:.78rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--taupe);transition:.15s}
+.tab:hover{color:var(--deep-rose)}
+.tab.on{color:var(--deep-rose);border-bottom-color:var(--deep-rose)}
+.tab .count{background:var(--blush);color:var(--deep-rose);border-radius:99px;padding:1px 8px;margin-left:7px;font-size:.7rem}
+
+/* cards */
+.card{background:var(--white);border:1px solid var(--blush-deep);border-radius:var(--card-radius);padding:22px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.grid.hero{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-top:14px}
+.stat-num{font-family:var(--font-display);font-size:2.2rem;font-weight:600;line-height:1.1}
+.stat-label{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--taupe);font-weight:500}
+.delta{font-size:.82rem;font-weight:500}
+.delta.up{color:var(--deep-rose)} .delta.down{color:var(--taupe);font-style:italic}
+.hero-note{margin-top:14px;color:var(--cocoa-soft);font-size:.95rem}
+.hero-note em{font-family:var(--font-display);font-style:italic;color:var(--deep-rose);font-size:1.05rem}
+
+/* lotus divider */
+.lotus-divider{display:flex;align-items:center;gap:18px;margin:34px 0 0}
+.lotus-divider::before,.lotus-divider::after{content:"";flex:1;height:1px;background:var(--blush-deep)}
+.lotus-divider svg{width:34px;height:34px}
+
+/* form */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:14px}
+.form-grid>div{min-width:0}
+label.f{display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--taupe);font-weight:500;margin-bottom:5px}
+input[type=date],input[type=time],input[type=number],input[type=text],input[type=url],select{width:100%;padding:10px 12px;border:1px solid var(--blush-deep);border-radius:var(--radius);background:var(--cream);font-family:var(--font-body);font-size:.95rem;color:var(--cocoa-ink)}
+input:focus,select:focus{outline:none;border-color:var(--clay-rose);background:var(--white)}
+.subhead{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--clay-rose);font-weight:500;margin-top:22px;padding-top:18px;border-top:1px dashed var(--blush-deep)}
+.btn{display:inline-block;background:var(--primary);color:var(--white);font-size:.78rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;border-radius:var(--radius);border:none;cursor:pointer;padding:12px 26px;transition:.15s}
+.btn:hover{background:var(--primary-hover);transform:translateY(-1px)}
+.btn.outline{background:transparent;color:var(--primary);border:1.5px solid var(--primary)}
+.btn.outline:hover{background:var(--primary);color:var(--white)}
+.btn.ghost{background:transparent;color:var(--taupe);border:none;letter-spacing:.06em;padding:12px 10px}
+.btn.ghost:hover{color:var(--deep-rose);transform:none}
+.btn:disabled{opacity:.5;cursor:default;transform:none}
+.form-actions{margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.editing-tag{font-size:.78rem;color:var(--deep-rose);font-style:italic}
+
+/* chips */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.chip{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:99px;border:1px solid var(--blush-deep);background:var(--white);color:var(--taupe);cursor:pointer;font-weight:500;transition:.15s}
+.chip.on{border-color:transparent;color:var(--white)}
+
+/* charts */
+.chart-card{margin-top:14px}
+.chart-wrap{position:relative;height:320px;margin-top:8px}
+@media(max-width:640px){.chart-wrap{height:250px}}
+
+/* records */
+.grid.records{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-top:14px}
+.rec-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dot{width:10px;height:10px;border-radius:50%}
+.rec-head h3{font-size:1.3rem}
+.rec-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--blush-deep);font-size:.88rem}
+.rec-row:last-child{border-bottom:none}
+.rec-row .k{color:var(--taupe)} .rec-row .v{font-weight:500;text-align:right}
+
+/* table */
+.table-wrap{overflow-x:auto;margin-top:14px;background:var(--white);border:1px solid var(--blush-deep);border-radius:var(--card-radius);box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:.88rem;min-width:760px}
+th{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--taupe);text-align:left;padding:12px 14px;border-bottom:1px solid var(--blush-deep);background:var(--cream-warm);position:sticky;top:0}
+td{padding:10px 14px;border-bottom:1px solid var(--cream-warm);white-space:nowrap}
+tr:hover td{background:var(--cream)}
+td .g{font-size:.78rem;margin-left:6px}
+td .g.up{color:var(--deep-rose)} td .g.down{color:var(--taupe);font-style:italic}
+.rowbtn{background:none;border:none;color:var(--taupe);cursor:pointer;font-size:.78rem;letter-spacing:.05em;text-transform:uppercase}
+.rowbtn:hover{color:var(--deep-rose)}
+.wk-row{cursor:pointer}
+.note-row td{white-space:normal;background:var(--cream-warm);color:var(--cocoa-soft);font-style:italic;font-size:.84rem}
+.note-row .rowbtn{font-style:normal;margin-left:10px}
+
+/* podcasts */
+.pod-up{display:grid;gap:12px;margin-top:14px}
+.pod-card{background:var(--white);border:1px solid var(--blush-deep);border-left:3px solid var(--clay-rose);border-radius:var(--card-radius);padding:16px 20px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;box-shadow:var(--shadow)}
+.pod-card.soon{border-left-color:var(--deep-rose);background:linear-gradient(90deg,var(--blush) 0%,var(--white) 55%)}
+.pod-when{min-width:96px}
+.pod-when .d{font-family:var(--font-display);font-size:1.5rem;font-weight:600;line-height:1.1;color:var(--deep-rose)}
+.pod-when .t{font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--taupe)}
+.pod-main{flex:1;min-width:180px}
+.pod-main h3{font-size:1.35rem;margin-bottom:2px}
+.pod-main .topic{font-size:.88rem;color:var(--cocoa-soft);font-style:italic}
+.pod-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tag{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:4px 11px;border-radius:99px;font-weight:500;white-space:nowrap}
+.tag.auto{background:var(--cream-warm);color:var(--taupe);font-size:.62rem;padding:2px 8px}
+.tag.review{background:var(--clay-rose);color:var(--white);font-size:.62rem;padding:2px 8px}
+.tag.virtual{background:var(--cream-warm);color:var(--cocoa-soft)}
+.tag.in_person{background:var(--blush);color:var(--deep-rose)}
+.tag.countdown{background:var(--dark);color:var(--blush)}
+.pipe-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-top:14px}
+.pipe-col{background:var(--white);border:1px solid var(--blush-deep);border-radius:var(--card-radius);padding:16px;box-shadow:var(--shadow)}
+.pipe-col h3{font-size:1.15rem;display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.pipe-col .n{font-size:.7rem;background:var(--cream-warm);color:var(--taupe);border-radius:99px;padding:1px 8px;font-family:var(--font-body)}
+.pipe-item{padding:10px 0;border-bottom:1px dashed var(--blush-deep);cursor:pointer}
+.pipe-item:last-child{border-bottom:none}
+.pipe-item:hover .nm{color:var(--deep-rose)}
+.pipe-item .nm{font-weight:500;font-size:.93rem}
+.pipe-item .sub{font-size:.78rem;color:var(--taupe)}
+.pipe-empty{color:var(--taupe);font-size:.85rem;font-style:italic;padding:10px 0}
+.empty-note{color:var(--taupe);font-size:.9rem;font-style:italic;margin-top:14px;padding:18px 22px;background:var(--cream-warm);border-radius:var(--card-radius)}
+
+/* banners / setup */
+.banner{background:var(--blush);border:1px solid var(--blush-deep);border-radius:var(--card-radius);padding:18px 22px;margin-top:20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.banner p{flex:1;min-width:220px;color:var(--cocoa-soft);font-size:.92rem}
+.setup-steps{margin:14px 0 4px;padding-left:0;list-style:none;counter-reset:st}
+.setup-steps li{counter-increment:st;position:relative;padding:8px 0 8px 42px;color:var(--cocoa-soft);font-size:.93rem}
+.setup-steps li::before{content:counter(st);position:absolute;left:0;top:8px;width:28px;height:28px;border-radius:50%;background:var(--blush);color:var(--deep-rose);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.85rem}
+.setup-steps code{background:var(--cream-warm);padding:2px 7px;border-radius:4px;font-size:.84rem;color:var(--deep-rose)}
+.setup-inputs{display:grid;gap:12px;margin-top:14px}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(80px);background:var(--dark);color:var(--cream);padding:12px 26px;border-radius:99px;font-size:.88rem;opacity:0;transition:.3s;z-index:99;box-shadow:0 6px 30px rgba(46,37,34,.3)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.hidden{display:none !important}
+
+/* footer */
+footer{background:var(--dark);color:var(--blush);margin-top:56px;padding:34px 0}
+footer .container{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+footer .wordmark{color:var(--blush)} footer .wordmark span{color:var(--clay-rose)}
+footer p{font-size:.8rem;color:#B9A49D;margin-left:auto}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="site-inner">
+    <div class="mark">
+      <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M30 50 C30 50 10 38 10 24 C10 16 18 10 30 18 C42 10 50 16 50 24 C50 38 30 50 30 50Z" stroke="#D9877B" stroke-width="1.6" fill="#F2D9D2"/>
+        <path d="M30 50 C30 50 20 35 20 26 C20 20 24 16 30 20 C36 16 40 20 40 26 C40 35 30 50 30 50Z" stroke="#C26F63" stroke-width="1.4" fill="none"/>
+        <path d="M30 50 L30 18" stroke="#D9877B" stroke-width="0.9" opacity="0.5"/>
+      </svg>
+    </div>
+    <div class="wordmark">Wise Heart<span> Planner</span><small>Followers · views · podcasts</small></div>
+    <div class="head-right">
+      <button class="btn ghost" id="syncNowBtn" style="padding:6px 10px" title="Fetch today's numbers from YouTube and Instagram">Sync now</button>
+      <span id="syncPill" class="pill preview">Preview</span>
+      <button class="gear" id="gearBtn" title="Connection settings">&#9881;</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- SETUP -->
+  <div id="setupCard" class="card hidden" style="margin-top:24px">
+    <span class="eyebrow">One-time setup</span>
+    <h2>Connect your <em style="font-style:italic;color:var(--deep-rose)">Supabase</em></h2>
+    <p class="muted">This is where your numbers live, so every device stays in sync.</p>
+    <ol class="setup-steps">
+      <li>Go to <strong>supabase.com</strong>, sign up (free), and create a <strong>New project</strong>.</li>
+      <li>In the left menu open <strong>SQL Editor</strong>, paste the whole <code>supabase-setup.sql</code> file, press <strong>Run</strong>. Then do the same with <code>supabase-update-2.sql</code>.</li>
+      <li>Open <strong>Project Settings → API</strong>, copy the <strong>Project URL</strong> and the <strong>anon public</strong> key, and paste them below.</li>
+    </ol>
+    <div class="setup-inputs">
+      <div><label class="f" for="inUrl">Project URL</label><input type="url" id="inUrl" placeholder="https://xxxx.supabase.co"></div>
+      <div><label class="f" for="inKey">Anon public key</label><input type="text" id="inKey" placeholder="sb_publishable_… or eyJhbGciOi…"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" id="connectBtn">Connect</button>
+      <button class="btn ghost" id="closeSetupBtn">Not now</button>
+      <span class="muted" id="setupMsg"></span>
+    </div>
+  </div>
+
+  <div id="importBanner" class="banner hidden">
+    <p><strong>Your table is empty.</strong> Want me to import the 72 weeks of history from your spreadsheet (Feb 27, 2025 – Jul 9, 2026)?</p>
+    <button class="btn" id="importBtn">Import history</button>
+  </div>
+
+  <div id="previewBanner" class="banner hidden">
+    <p><strong>Preview mode.</strong> You're seeing your spreadsheet history, but new entries won't be saved anywhere yet. Connect Supabase to start syncing.</p>
+    <button class="btn outline" id="openSetupBtn">Set up sync</button>
+  </div>
+
+  <div id="podTableBanner" class="banner hidden">
+    <p><strong>Podcast table not found.</strong> Run <code style="background:var(--cream-warm);padding:2px 7px;border-radius:4px;color:var(--deep-rose)">supabase-update-2.sql</code> in your Supabase SQL Editor to switch this on.</p>
+  </div>
+
+  <div id="missedBanner" class="banner hidden">
+    <p id="missedText"></p>
+    <button class="btn" id="missedBtn">Log that week</button>
+  </div>
+
+  <div id="reviewBanner" class="banner hidden">
+    <p id="reviewText"></p>
+    <button class="btn" id="reviewBtn">Confirm the numbers</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab on" data-tab="numbers">Numbers</button>
+    <button class="tab" data-tab="podcasts">Podcasts <span class="count" id="podCount">0</span></button>
+  </div>
+
+  <!-- ============ NUMBERS TAB ============ -->
+  <div id="tab-numbers">
+
+    <section>
+      <span class="eyebrow">This week</span>
+      <h1>Where the <em>Wise Heart</em> audience stands</h1>
+      <div class="grid hero" id="heroGrid"></div>
+      <p class="hero-note" id="heroNote"></p>
+    </section>
+
+    <section>
+      <span class="eyebrow">Total views</span>
+      <h2>How far the work is travelling</h2>
+      <div class="grid hero" id="viewsGrid"></div>
+      <p class="empty-note hidden" id="viewsEmpty">No view counts logged yet. Add them in this week's check-in below — once there are two weeks, the averages and charts fill in here.</p>
+    </section>
+
+    <div class="lotus-divider">
+      <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M30 50 C30 50 10 38 10 24 C10 16 18 10 30 18 C42 10 50 16 50 24 C50 38 30 50 30 50Z" stroke="#D9877B" stroke-width="1" fill="none"/>
+        <path d="M30 50 C30 50 20 35 20 26 C20 20 24 16 30 20 C36 16 40 20 40 26 C40 35 30 50 30 50Z" stroke="#C26F63" stroke-width="1" fill="none"/>
+        <path d="M30 50 L30 18" stroke="#D9877B" stroke-width="0.75" opacity="0.5"/>
+      </svg>
+    </div>
+
+    <section>
+      <span class="eyebrow">Thursday check-in</span>
+      <h2>Log this week's numbers</h2>
+      <p class="muted">Fields start with last week's counts — just update what changed. Views are optional.</p>
+      <div class="card" style="margin-top:14px">
+        <div class="form-grid">
+          <div><label class="f" for="fDate">Week of</label><input type="date" id="fDate"></div>
+          <div><label class="f" for="fYt">YouTube subs</label><input type="number" id="fYt" min="0" inputmode="numeric"></div>
+          <div><label class="f" for="fTt">TikTok followers</label><input type="number" id="fTt" min="0" inputmode="numeric"></div>
+          <div><label class="f" for="fIg">Instagram followers</label><input type="number" id="fIg" min="0" inputmode="numeric"></div>
+        </div>
+        <div class="subhead">Lifetime views <span style="text-transform:none;letter-spacing:0;color:var(--taupe)">— optional, leave blank to skip</span></div>
+        <div class="form-grid">
+          <div><label class="f" for="fYtV">YouTube views</label><input type="number" id="fYtV" min="0" inputmode="numeric" placeholder="—"></div>
+          <div><label class="f" for="fTtV">TikTok views</label><input type="number" id="fTtV" min="0" inputmode="numeric" placeholder="—"></div>
+          <div><label class="f" for="fIgV">Instagram views</label><input type="number" id="fIgV" min="0" inputmode="numeric" placeholder="—"></div>
+        </div>
+        <div style="margin-top:14px"><label class="f" for="fNotes">Notes <span style="text-transform:none;letter-spacing:0">(optional)</span></label><input type="text" id="fNotes" placeholder="e.g. street reading short took off"></div>
+        <div class="form-actions">
+          <button class="btn" id="saveBtn">Save week</button>
+          <button class="btn ghost hidden" id="deleteBtn">Delete this week</button>
+          <span class="editing-tag hidden" id="editTag">editing an existing week</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <span class="eyebrow">The long view</span>
+      <h2>Growth over time</h2>
+      <div class="chips" id="platformChips"></div>
+      <div class="card chart-card"><span class="eyebrow" style="margin-bottom:2px">Followers</span><div class="chart-wrap"><canvas id="lineChart"></canvas></div></div>
+      <div class="card chart-card"><span class="eyebrow" style="margin-bottom:2px">New followers gained per month</span><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
+      <div class="card chart-card hidden" id="viewsChartCard"><span class="eyebrow" style="margin-bottom:2px">Views gained per week</span><div class="chart-wrap"><canvas id="viewsChart"></canvas></div></div>
+    </section>
+
+    <section>
+      <span class="eyebrow">Bests &amp; averages</span>
+      <h2>What the numbers say</h2>
+      <div class="grid records" id="recordsGrid"></div>
+    </section>
+
+    <section>
+      <span class="eyebrow">Every Thursday so far</span>
+      <h2>History</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Week of</th><th>YouTube</th><th>TikTok</th><th>Instagram</th><th>Views (YT/TT/IG)</th></tr></thead>
+        <tbody id="historyBody"></tbody>
+      </table></div>
+    </section>
+
+  </div>
+
+  <!-- ============ PODCASTS TAB ============ -->
+  <div id="tab-podcasts" class="hidden">
+
+    <section>
+      <span class="eyebrow">On the calendar</span>
+      <h1>Upcoming <em>podcasts</em></h1>
+      <div class="pod-up" id="upcomingList"></div>
+    </section>
+
+    <div class="lotus-divider">
+      <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M30 50 C30 50 10 38 10 24 C10 16 18 10 30 18 C42 10 50 16 50 24 C50 38 30 50 30 50Z" stroke="#D9877B" stroke-width="1" fill="none"/>
+        <path d="M30 50 C30 50 20 35 20 26 C20 20 24 16 30 20 C36 16 40 20 40 26 C40 35 30 50 30 50Z" stroke="#C26F63" stroke-width="1" fill="none"/>
+        <path d="M30 50 L30 18" stroke="#D9877B" stroke-width="0.75" opacity="0.5"/>
+      </svg>
+    </div>
+
+    <section>
+      <span class="eyebrow">Who's in the works</span>
+      <h2>The pipeline</h2>
+      <p class="muted">Click anyone to edit or move them along.</p>
+      <div class="pipe-grid" id="pipeGrid"></div>
+    </section>
+
+    <section>
+      <span class="eyebrow" id="pFormEyebrow">Add a guest</span>
+      <h2 id="pFormTitle">New podcast</h2>
+      <div class="card" style="margin-top:14px">
+        <div class="form-grid">
+          <div><label class="f" for="pGuest">Guest name</label><input type="text" id="pGuest" placeholder="Who's coming on"></div>
+          <div><label class="f" for="pStage">Stage</label><select id="pStage"></select></div>
+          <div><label class="f" for="pFormat">Virtual or in person</label><select id="pFormat">
+            <option value="">Not decided</option><option value="virtual">Virtual</option><option value="in_person">In person</option>
+          </select></div>
+        </div>
+        <div class="form-grid">
+          <div><label class="f" for="pDate">Date <span style="text-transform:none;letter-spacing:0">(blank = pipeline)</span></label><input type="date" id="pDate"></div>
+          <div><label class="f" for="pTime">Time</label><input type="time" id="pTime"></div>
+          <div><label class="f" for="pTopic">Topic or angle</label><input type="text" id="pTopic" placeholder="e.g. face reading for parents"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn" id="pSaveBtn">Add to list</button>
+          <button class="btn ghost hidden" id="pCancelBtn">Cancel</button>
+          <button class="btn ghost hidden" id="pDeleteBtn">Delete</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+</main>
+
+<footer>
+  <div class="container">
+    <div class="wordmark">Wise Heart<span> Connect</span></div>
+    <p>Portland, Oregon &nbsp;·&nbsp; data syncs through your Supabase</p>
+  </div>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+/* ================= CONFIG ================= */
+const SUPABASE_URL      = "https://ywjtbzxfdudrqsvsslzs.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Vt5ul1fZGuwxG8zq_ejyNw_kJackpiu";
+
+/* Spreadsheet history (preview + one-click import) */
+const SEED = [["2025-02-27",25,14,4,null],["2025-03-06",34,49,7,null],["2025-03-13",39,71,9,null],["2025-03-20",44,75,11,null],["2025-03-27",47,85,11,null],["2025-04-03",48,91,12,null],["2025-04-10",51,102,12,null],["2025-04-17",54,114,12,null],["2025-04-24",56,196,14,null],["2025-05-01",61,226,15,null],["2025-05-08",65,269,18,null],["2025-05-15",67,320,18,null],["2025-05-22",78,376,18,null],["2025-05-29",82,414,19,"YT 6, TT 29, IN 1.2"],["2025-06-05",91,436,19,null],["2025-06-12",93,459,19,null],["2025-06-19",99,470,19,null],["2025-06-26",102,492,19,null],["2025-07-03",114,505,19,null],["2025-07-10",121,516,19,null],["2025-07-17",133,528,23,null],["2025-07-24",148,540,23,null],["2025-07-31",167,549,23,null],["2025-08-07",175,570,24,null],["2025-08-14",191,597,25,null],["2025-08-21",210,616,25,null],["2025-08-28",218,620,25,"YT 8, TT 23, IN  0.9"],["2025-09-04",230,630,26,null],["2025-09-11",234,637,26,null],["2025-09-18",242,642,26,null],["2025-09-25",342,650,26,null],["2025-10-02",556,676,26,null],["2025-10-09",742,703,26,null],["2025-10-16",850,706,26,null],["2025-10-23",873,706,26,null],["2025-10-30",894,719,27,null],["2025-11-06",912,785,28,null],["2025-11-13",922,794,29,null],["2025-11-20",940,797,30,null],["2025-11-27",951,823,31,"YT 24 TT 20 IN 0.7"],["2025-12-04",958,830,31,null],["2025-12-11",971,834,31,null],["2025-12-18",981,837,31,null],["2025-12-25",989,842,31,null],["2026-01-01",993,846,31,null],["2026-01-08",1004,851,31,null],["2026-01-15",1018,854,31,null],["2026-01-22",1031,871,31,null],["2026-01-29",1041,883,31,null],["2026-02-05",1059,900,30,null],["2026-02-12",1099,902,30,null],["2026-02-19",1116,900,30,null],["2026-02-26",1135,897,30,"YT 21, TT 17, IN 0.5"],["2026-03-05",1145,891,31,null],["2026-03-12",1162,892,31,null],["2026-03-19",1171,898,31,null],["2026-03-26",1192,903,33,null],["2026-04-02",1209,903,32,null],["2026-04-09",1238,912,32,null],["2026-04-16",1240,917,32,null],["2026-04-23",1259,919,33,null],["2026-04-30",1269,921,33,null],["2026-05-07",1285,926,33,null],["2026-05-14",1307,926,33,null],["2026-05-21",1317,930,33,null],["2026-05-28",1331,937,36,null],["2026-06-04",1343,937,37,null],["2026-06-11",1352,940,37,null],["2026-06-18",1365,961,37,null],["2026-06-25",1376,970,39,null],["2026-07-02",1385,972,42,null],["2026-07-09",1384,983,47,null]]
+  .map(r => ({week_date:r[0], youtube:r[1], tiktok:r[2], instagram:r[3], notes:r[4],
+              youtube_views:null, tiktok_views:null, instagram_views:null}));
+
+/*STATS-CORE-START*/
+const PLATFORMS = [
+  {key:'youtube',   viewKey:'youtube_views',   label:'YouTube',   color:'#C26F63'},
+  {key:'tiktok',    viewKey:'tiktok_views',    label:'TikTok',    color:'#3A2F2C'},
+  {key:'instagram', viewKey:'instagram_views', label:'Instagram', color:'#8C6F68'}
+];
+const STAGES = [
+  {key:'idea',        label:'Idea'},
+  {key:'reached_out', label:'Reached out'},
+  {key:'confirmed',   label:'Confirmed'},
+  {key:'recorded',    label:'Recorded'}
+];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+function addDays(iso, n){
+  const [y,m,d] = iso.split('-').map(Number);
+  return new Date(Date.UTC(y, m-1, d + n)).toISOString().slice(0,10);
+}
+function fmtDate(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  return MONTH_NAMES[m-1].slice(0,3) + ' ' + d + ', ' + y;
+}
+function fmtMonth(ym){ const [y,m] = ym.split('-').map(Number); return MONTH_NAMES[m-1] + ' ' + y; }
+function fmtMonthShort(ym){ const [y,m] = ym.split('-').map(Number); return MONTH_NAMES[m-1].slice(0,3) + " '" + String(y).slice(2); }
+function fmtTime(t){
+  if(!t) return '';
+  const [h,mi] = t.split(':').map(Number);
+  const ap = h >= 12 ? 'pm' : 'am';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return h12 + (mi ? ':' + String(mi).padStart(2,'0') : '') + ap;
+}
+function mean(a){ return a.length ? a.reduce((s,x)=>s+x,0)/a.length : null; }
+function todayISO(){
+  const t = new Date();
+  return t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
+}
+function daysUntil(iso, from){
+  const a = new Date((from || todayISO()) + 'T00:00:00Z'), b = new Date(iso + 'T00:00:00Z');
+  return Math.round((b - a) / 86400000);
+}
+function lastThursday(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  const back = (new Date(Date.UTC(y, m-1, d)).getUTCDay() - 4 + 7) % 7;
+  return addDays(iso, -back);
+}
+function missedThursdays(rows, today){
+  if(!rows.length) return [];
+  const target = lastThursday(today || todayISO());
+  const out = [];
+  let d = addDays(rows[rows.length-1].week_date, 7);
+  while(d <= target){ out.push(d); d = addDays(d, 7); }
+  return out;
+}
+function computeStats(rows){
+  const s = { weeks: rows.length, perPlatform:{}, views:{}, monthKeys:[], monthly:{}, totalNow:0, totalFirst:0, hasViews:false };
+  if(!rows.length) return s;
+  s.first = rows[0].week_date;
+  s.last  = rows[rows.length-1].week_date;
+  const monthly = {};
+  for(const p of PLATFORMS){
+    const vals = rows.map(r => r[p.key] ?? 0);
+    const gains = [];
+    for(let j=1; j<vals.length; j++) gains.push(vals[j]-vals[j-1]);
+    for(let j=1; j<rows.length; j++){
+      const ym = rows[j].week_date.slice(0,7);
+      if(!monthly[ym]) monthly[ym] = {youtube:0, tiktok:0, instagram:0};
+      monthly[ym][p.key] += gains[j-1];
+    }
+    let bestWeek = null;
+    for(let j=1; j<rows.length; j++){
+      if(!bestWeek || gains[j-1] > bestWeek.gain) bestWeek = {date: rows[j].week_date, gain: gains[j-1]};
+    }
+    s.perPlatform[p.key] = {
+      current: vals[vals.length-1],
+      lastGain: gains.length ? gains[gains.length-1] : null,
+      avgWeekly: mean(gains), avgLast4: mean(gains.slice(-4)), bestWeek
+    };
+    s.totalNow += vals[vals.length-1];
+    s.totalFirst += vals[0];
+
+    /* views — only weeks where a number was actually entered */
+    const logged = rows.filter(r => r[p.viewKey] != null);
+    const vGains = [];
+    for(let j=1; j<logged.length; j++){
+      vGains.push({date: logged[j].week_date, gain: logged[j][p.viewKey] - logged[j-1][p.viewKey]});
+    }
+    let bestVWeek = null;
+    for(const g of vGains){ if(!bestVWeek || g.gain > bestVWeek.gain) bestVWeek = g; }
+    s.views[p.key] = {
+      current: logged.length ? logged[logged.length-1][p.viewKey] : null,
+      weeksLogged: logged.length,
+      lastGain: vGains.length ? vGains[vGains.length-1].gain : null,
+      avgWeekly: mean(vGains.map(g => g.gain)),
+      bestWeek: bestVWeek,
+      series: vGains
+    };
+    if(logged.length) s.hasViews = true;
+  }
+  s.monthKeys = Object.keys(monthly).sort();
+  s.monthly = monthly;
+  for(const p of PLATFORMS){
+    const byMonth = s.monthKeys.map(ym => monthly[ym][p.key]);
+    let bestMonth = null;
+    s.monthKeys.forEach((ym,i) => { if(!bestMonth || byMonth[i] > bestMonth.gain) bestMonth = {ym, gain: byMonth[i]}; });
+    s.perPlatform[p.key].avgMonthly = mean(byMonth);
+    s.perPlatform[p.key].bestMonth = bestMonth;
+  }
+  s.totalViewsNow = PLATFORMS.reduce((t,p) => t + (s.views[p.key].current || 0), 0);
+  return s;
+}
+function splitPodcasts(pods, today){
+  const t = today || todayISO();
+  const upcoming = pods.filter(p => p.record_date && p.record_date >= t && p.stage !== 'recorded')
+                       .sort((a,b) => (a.record_date + (a.record_time||'')).localeCompare(b.record_date + (b.record_time||'')));
+  const upIds = new Set(upcoming.map(p => p.id));
+  const byStage = {};
+  for(const st of STAGES) byStage[st.key] = [];
+  for(const p of pods){
+    if(upIds.has(p.id)) continue;
+    (byStage[p.stage] || byStage.idea).push(p);
+  }
+  for(const k in byStage){
+    byStage[k].sort((a,b) => (b.record_date || '').localeCompare(a.record_date || '') || a.guest.localeCompare(b.guest));
+  }
+  return {upcoming, byStage};
+}
+/*STATS-CORE-END*/
+
+/* ================= APP ================= */
+const $ = id => document.getElementById(id);
+let sb = null, rows = [], pods = [], connected = false, podsOk = false;
+let editingDate = null, editingPod = null;
+let lineChart = null, barChart = null, viewsChart = null;
+const visible = {youtube:true, tiktok:true, instagram:true};
+
+function getCreds(){
+  if(SUPABASE_URL.startsWith('https://') && !SUPABASE_ANON_KEY.startsWith('PASTE')) return {url:SUPABASE_URL, key:SUPABASE_ANON_KEY};
+  try{
+    const saved = JSON.parse(localStorage.getItem('wh_supabase') || 'null');
+    if(saved && saved.url && saved.key) return saved;
+  }catch(e){}
+  return null;
+}
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 3200);
+}
+function num(n){ return n==null ? '—' : Number(n).toLocaleString('en-US'); }
+function compact(n){
+  if(n == null) return '—';
+  const a = Math.abs(n);
+  if(a >= 1e6) return (n/1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/,'') + 'M';
+  if(a >= 1e4) return Math.round(n/1e3) + 'K';
+  if(a >= 1e3) return (n/1e3).toFixed(1).replace(/\.0$/,'') + 'K';
+  return String(n);
+}
+function fmtAvg(n){ return n==null ? '—' : (Math.abs(n) >= 10 ? Math.round(n).toLocaleString('en-US') : (Math.round(n*10)/10).toString()); }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function deltaHtml(g, cls, fmt){
+  if(g == null) return '';
+  const f = fmt || num;
+  return `<span class="${cls} ${g >= 0 ? 'up':'down'}">${g > 0 ? '+' : ''}${f(g)}</span>`;
+}
+
+async function init(){
+  const creds = getCreds();
+  if(creds){
+    try{
+      sb = window.supabase.createClient(creds.url, creds.key);
+      const {data, error} = await sb.from('weekly_stats').select('*').order('week_date', {ascending:true});
+      if(error) throw error;
+      connected = true;
+      rows = data || [];
+      $('syncPill').textContent = 'Synced'; $('syncPill').className = 'pill ok';
+      $('previewBanner').classList.add('hidden');
+      if(rows.length === 0 && SEED.length) $('importBanner').classList.remove('hidden');
+    }catch(err){
+      console.error(err);
+      connected = false; sb = null;
+      toast("Couldn't reach Supabase — showing preview data");
+    }
+  }
+  if(!connected){
+    rows = SEED.slice();
+    $('syncPill').textContent = 'Preview'; $('syncPill').className = 'pill preview';
+    $('previewBanner').classList.remove('hidden');
+  }
+  await loadPods();
+  renderAll();
+  resetForm();
+  resetPodForm();
+}
+
+async function loadPods(){
+  if(!connected){ podsOk = true; return; }
+  try{
+    const {data, error} = await sb.from('podcasts').select('*');
+    if(error) throw error;
+    pods = data || []; podsOk = true;
+    $('podTableBanner').classList.add('hidden');
+  }catch(err){
+    console.error('podcasts:', err);
+    podsOk = false; pods = [];
+    $('podTableBanner').classList.remove('hidden');
+  }
+}
+
+function renderAll(){
+  const s = computeStats(rows);
+  renderHero(s); renderViews(s); renderRecords(s); renderTable(s); renderCharts(s);
+  renderMissed(); renderReview(); renderPodcasts();
+}
+
+/* the most recent week the robot filled in that you haven't confirmed */
+function reviewRow(){
+  for(let i = rows.length - 1; i >= 0; i--) if(rows[i].needs_review) return rows[i];
+  return null;
+}
+function renderReview(){
+  const r = reviewRow(), b = $('reviewBanner');
+  if(!r){ b.classList.add('hidden'); return; }
+  $('reviewText').innerHTML = `<strong>${fmtDate(r.week_date)} came in automatically.</strong> `
+    + `Views and Instagram followers are exact. Your <strong>YouTube subscriber count</strong> is rounded by YouTube, `
+    + `and <strong>TikTok</strong> is still last week's — worth a quick correction.`;
+  b.classList.remove('hidden');
+  $('missedBanner').classList.add('hidden');
+}
+
+function renderMissed(){
+  const missed = missedThursdays(rows);
+  const b = $('missedBanner');
+  if(!missed.length){ b.classList.add('hidden'); return; }
+  const list = missed.map(fmtDate).join(', ');
+  $('missedText').innerHTML = missed.length === 1
+    ? `<strong>Thursday slipped by.</strong> The week of <strong>${list}</strong> hasn't been logged yet.`
+    : `<strong>${missed.length} Thursdays are waiting:</strong> ${list}. Log them one at a time — oldest first.`;
+  $('missedBtn').textContent = missed.length === 1 ? 'Log that week' : 'Log the oldest';
+  b.classList.remove('hidden');
+}
+
+function renderHero(s){
+  const grid = $('heroGrid'); grid.innerHTML = '';
+  for(const p of PLATFORMS){
+    const st = s.perPlatform[p.key]; if(!st) continue;
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="card">
+        <div class="stat-label"><span class="dot" style="display:inline-block;background:${p.color};margin-right:6px"></span>${p.label}</div>
+        <div class="stat-num">${num(st.current)}</div>
+        <div>${deltaHtml(st.lastGain,'delta')} <span class="muted">this week</span></div>
+      </div>`);
+  }
+  const totalGain = PLATFORMS.reduce((t,p)=> t + (s.perPlatform[p.key]?.lastGain ?? 0), 0);
+  grid.insertAdjacentHTML('beforeend', `
+    <div class="card" style="background:var(--dark);border-color:var(--dark)">
+      <div class="stat-label" style="color:var(--blush-deep)">Everyone together</div>
+      <div class="stat-num" style="color:var(--cream)">${num(s.totalNow)}</div>
+      <div>${deltaHtml(totalGain,'delta')} <span style="color:#B9A49D;font-size:.85rem">this week</span></div>
+    </div>`);
+  const months = Math.round((new Date(s.last) - new Date(s.first)) / (1000*3600*24*30.44));
+  $('heroNote').innerHTML = `You've logged <em>${s.weeks} Thursdays</em> across ${months} months — the whole audience has grown from ${num(s.totalFirst)} to <em>${num(s.totalNow)}</em>.`;
+}
+
+function renderViews(s){
+  const grid = $('viewsGrid'), empty = $('viewsEmpty');
+  grid.innerHTML = '';
+  if(!s.hasViews){ grid.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+  grid.classList.remove('hidden'); empty.classList.add('hidden');
+  for(const p of PLATFORMS){
+    const v = s.views[p.key];
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="card">
+        <div class="stat-label"><span class="dot" style="display:inline-block;background:${p.color};margin-right:6px"></span>${p.label} views</div>
+        <div class="stat-num">${compact(v.current)}</div>
+        <div>${v.lastGain != null ? deltaHtml(v.lastGain,'delta',compact) + ' <span class="muted">this week</span>'
+              : '<span class="muted">' + (v.weeksLogged ? 'first week logged' : 'not logged yet') + '</span>'}</div>
+      </div>`);
+  }
+  grid.insertAdjacentHTML('beforeend', `
+    <div class="card" style="background:var(--dark);border-color:var(--dark)">
+      <div class="stat-label" style="color:var(--blush-deep)">All platforms</div>
+      <div class="stat-num" style="color:var(--cream)">${compact(s.totalViewsNow)}</div>
+      <div><span style="color:#B9A49D;font-size:.85rem">total views</span></div>
+    </div>`);
+}
+
+function renderRecords(s){
+  const grid = $('recordsGrid'); grid.innerHTML = '';
+  for(const p of PLATFORMS){
+    const st = s.perPlatform[p.key]; if(!st) continue;
+    const v = s.views[p.key];
+    const viewRows = v.weeksLogged > 1 ? `
+        <div class="rec-row"><span class="k">Views per week</span><span class="v">${compact(Math.round(v.avgWeekly))} avg</span></div>
+        <div class="rec-row"><span class="k">Best views week</span><span class="v">${v.bestWeek ? fmtDate(v.bestWeek.date) + ' · +' + compact(v.bestWeek.gain) : '—'}</span></div>` : '';
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="card">
+        <div class="rec-head"><span class="dot" style="background:${p.color}"></span><h3>${p.label}</h3></div>
+        <div class="rec-row"><span class="k">Average per week</span><span class="v">${fmtAvg(st.avgWeekly)} new</span></div>
+        <div class="rec-row"><span class="k">Last 4 weeks</span><span class="v">${fmtAvg(st.avgLast4)} /wk</span></div>
+        <div class="rec-row"><span class="k">Average per month</span><span class="v">${fmtAvg(st.avgMonthly)} new</span></div>
+        <div class="rec-row"><span class="k">Best month</span><span class="v">${st.bestMonth ? fmtMonth(st.bestMonth.ym) + ' · +' + num(st.bestMonth.gain) : '—'}</span></div>
+        <div class="rec-row"><span class="k">Best week</span><span class="v">${st.bestWeek ? fmtDate(st.bestWeek.date) + ' · +' + num(st.bestWeek.gain) : '—'}</span></div>
+        ${viewRows}
+      </div>`);
+  }
+}
+
+function renderTable(s){
+  const body = $('historyBody'); body.innerHTML = '';
+  const sorted = rows.slice().sort((a,b) => b.week_date.localeCompare(a.week_date));
+  const byDate = {}; rows.forEach((r,i) => byDate[r.week_date] = i);
+  for(const r of sorted){
+    const i = byDate[r.week_date];
+    const prev = i > 0 ? rows[i-1] : null;
+    const cell = k => `${num(r[k])}${prev ? deltaHtml(r[k]-prev[k],'g') : ''}`;
+    const anyV = r.youtube_views != null || r.tiktok_views != null || r.instagram_views != null;
+    const vCell = anyV ? PLATFORMS.map(p => compact(r[p.viewKey])).join(' / ') : '<span style="color:var(--taupe)">—</span>';
+    const badge = r.needs_review ? ' <span class="tag review">check</span>' : (r.auto_at ? ' <span class="tag auto">auto</span>' : '');
+    body.insertAdjacentHTML('beforeend', `
+      <tr class="wk-row" onclick="toggleNote('${r.week_date}')">
+        <td>${fmtDate(r.week_date)}${badge}</td>
+        <td>${cell('youtube')}</td><td>${cell('tiktok')}</td><td>${cell('instagram')}</td>
+        <td>${vCell}</td>
+      </tr>
+      <tr class="note-row hidden" id="note-${r.week_date}">
+        <td colspan="5">${esc(r.notes) || 'No notes for this week.'}<button class="rowbtn" onclick="event.stopPropagation();editWeek('${r.week_date}')">edit week</button></td>
+      </tr>`);
+  }
+}
+function toggleNote(d){
+  const el = document.getElementById('note-' + d);
+  if(el) el.classList.toggle('hidden');
+}
+
+function chartDefaults(){
+  Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+  Chart.defaults.color = '#8C6F68';
+  Chart.defaults.borderColor = 'rgba(233,196,186,.45)';
+}
+function renderCharts(s){
+  chartDefaults();
+  const labels = rows.map(r => r.week_date);
+  if(lineChart) lineChart.destroy();
+  lineChart = new Chart($('lineChart'), {
+    type:'line',
+    data:{labels, datasets: PLATFORMS.map(p => ({
+      label:p.label, data: rows.map(r => r[p.key]), borderColor:p.color, backgroundColor:p.color,
+      tension:.3, pointRadius:0, pointHitRadius:12, borderWidth:2.2, hidden: !visible[p.key]
+    }))},
+    options:{
+      responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
+      plugins:{ legend:{display:false},
+        tooltip:{ backgroundColor:'#2E2522', callbacks:{ title: items => fmtDate(items[0].label) } } },
+      scales:{
+        x:{ ticks:{ maxTicksLimit:10, callback: function(v){ return fmtMonthShort(this.getLabelForValue(v).slice(0,7)); } }, grid:{display:false} },
+        y:{ beginAtZero:true, ticks:{precision:0} }
+      }
+    }
+  });
+  if(barChart) barChart.destroy();
+  barChart = new Chart($('barChart'), {
+    type:'bar',
+    data:{labels: s.monthKeys.map(fmtMonthShort), datasets: PLATFORMS.map(p => ({
+      label:p.label, data: s.monthKeys.map(ym => s.monthly[ym][p.key]),
+      backgroundColor: p.color + 'CC', borderRadius:3, hidden: !visible[p.key]
+    }))},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{backgroundColor:'#2E2522'}},
+      scales:{x:{grid:{display:false}}, y:{ticks:{precision:0}}} }
+  });
+
+  const vLabels = [...new Set(PLATFORMS.flatMap(p => s.views[p.key].series.map(g => g.date)))].sort();
+  const card = $('viewsChartCard');
+  if(vLabels.length){
+    card.classList.remove('hidden');
+    if(viewsChart) viewsChart.destroy();
+    viewsChart = new Chart($('viewsChart'), {
+      type:'bar',
+      data:{labels: vLabels.map(fmtDate), datasets: PLATFORMS.map(p => {
+        const m = {}; s.views[p.key].series.forEach(g => m[g.date] = g.gain);
+        return {label:p.label, data: vLabels.map(d => m[d] ?? null),
+                backgroundColor: p.color + 'CC', borderRadius:3, hidden: !visible[p.key]};
+      })},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}, tooltip:{backgroundColor:'#2E2522'}},
+        scales:{x:{grid:{display:false}}, y:{ticks:{callback: v => compact(v)}}} }
+    });
+  } else { card.classList.add('hidden'); }
+  renderChips();
+}
+function renderChips(){
+  const wrap = $('platformChips'); wrap.innerHTML = '';
+  for(const p of PLATFORMS){
+    const b = document.createElement('button');
+    b.className = 'chip' + (visible[p.key] ? ' on' : '');
+    if(visible[p.key]) b.style.background = p.color;
+    b.textContent = p.label;
+    b.onclick = () => { visible[p.key] = !visible[p.key]; renderCharts(computeStats(rows)); };
+    wrap.appendChild(b);
+  }
+}
+
+/* ---------- numbers form ---------- */
+function vNum(id){ const s = $(id).value.trim(); return s === '' ? null : parseInt(s,10); }
+function resetForm(){
+  editingDate = null;
+  $('editTag').classList.add('hidden'); $('deleteBtn').classList.add('hidden');
+  $('saveBtn').textContent = 'Save week';
+  const last = rows.length ? rows[rows.length-1] : null;
+  const missed = missedThursdays(rows);
+  $('fDate').value = missed.length ? missed[0] : (last ? addDays(last.week_date, 7) : todayISO());
+  $('fYt').value = last ? last.youtube : '';
+  $('fTt').value = last ? last.tiktok : '';
+  $('fIg').value = last ? last.instagram : '';
+  $('fYtV').value = last && last.youtube_views   != null ? last.youtube_views   : '';
+  $('fTtV').value = last && last.tiktok_views    != null ? last.tiktok_views    : '';
+  $('fIgV').value = last && last.instagram_views != null ? last.instagram_views : '';
+  $('fNotes').value = '';
+}
+function editWeek(date){
+  const r = rows.find(x => x.week_date === date); if(!r) return;
+  showTab('numbers');
+  editingDate = date;
+  $('fDate').value = r.week_date;
+  $('fYt').value = r.youtube; $('fTt').value = r.tiktok; $('fIg').value = r.instagram;
+  $('fYtV').value = r.youtube_views   != null ? r.youtube_views   : '';
+  $('fTtV').value = r.tiktok_views    != null ? r.tiktok_views    : '';
+  $('fIgV').value = r.instagram_views != null ? r.instagram_views : '';
+  $('fNotes').value = r.notes || '';
+  $('editTag').classList.remove('hidden'); $('deleteBtn').classList.remove('hidden');
+  $('saveBtn').textContent = 'Update week';
+  window.scrollTo({top: $('fDate').closest('section').offsetTop - 80, behavior:'smooth'});
+}
+$('fDate').addEventListener('change', () => {
+  const r = rows.find(x => x.week_date === $('fDate').value);
+  if(r) editWeek(r.week_date);
+  else if(editingDate){ editingDate = null; $('editTag').classList.add('hidden'); $('deleteBtn').classList.add('hidden'); $('saveBtn').textContent = 'Save week'; }
+});
+async function saveWeek(){
+  const week_date = $('fDate').value;
+  const youtube = parseInt($('fYt').value,10), tiktok = parseInt($('fTt').value,10), instagram = parseInt($('fIg').value,10);
+  if(!week_date || isNaN(youtube) || isNaN(tiktok) || isNaN(instagram)){ toast('Please fill the date and all three follower numbers'); return; }
+  const existing = rows.find(r => r.week_date === week_date);
+  const rec = {week_date, youtube, tiktok, instagram,
+    youtube_views: vNum('fYtV'), tiktok_views: vNum('fTtV'), instagram_views: vNum('fIgV'),
+    notes: $('fNotes').value.trim() || null,
+    auto_at: existing ? (existing.auto_at ?? null) : null,
+    needs_review: false};   /* you've now looked at it */
+  if(connected){
+    $('saveBtn').disabled = true;
+    const {error} = await sb.from('weekly_stats').upsert({...rec, updated_at:new Date().toISOString()}, {onConflict:'week_date'});
+    $('saveBtn').disabled = false;
+    if(error){
+      console.error(error);
+      toast(/column/i.test(error.message) ? 'Views columns missing — run supabase-update-2.sql' : "That didn't save — " + error.message);
+      return;
+    }
+  }
+  const idx = rows.findIndex(r => r.week_date === week_date);
+  if(idx >= 0) rows[idx] = rec; else { rows.push(rec); rows.sort((a,b) => a.week_date.localeCompare(b.week_date)); }
+  renderAll(); resetForm();
+  const left = missedThursdays(rows);
+  toast(connected
+    ? (left.length ? 'Saved — ' + left.length + ' more week' + (left.length>1?'s':'') + ' to catch up' : 'Saved — all caught up, see you next Thursday')
+    : 'Noted for this session (connect Supabase to keep it)');
+}
+async function deleteWeek(){
+  if(!editingDate) return;
+  if(!window.confirm('Delete the week of ' + fmtDate(editingDate) + '?')) return;
+  if(connected){
+    const {error} = await sb.from('weekly_stats').delete().eq('week_date', editingDate);
+    if(error){ toast("Couldn't delete — " + error.message); return; }
+  }
+  rows = rows.filter(r => r.week_date !== editingDate);
+  renderAll(); resetForm(); toast('Week deleted');
+}
+$('saveBtn').onclick = saveWeek;
+$('deleteBtn').onclick = deleteWeek;
+$('missedBtn').onclick = () => {
+  showTab('numbers'); resetForm();
+  window.scrollTo({top: $('fDate').closest('section').offsetTop - 80, behavior:'smooth'});
+  $('fYt').focus({preventScroll:true});
+};
+$('reviewBtn').onclick = () => {
+  const r = reviewRow(); if(!r) return;
+  editWeek(r.week_date);
+  setTimeout(() => { $('fYt').focus({preventScroll:true}); $('fYt').select(); }, 350);
+};
+
+/* ---------- sync now ---------- */
+$('syncNowBtn').onclick = async () => {
+  if(!connected){ toast('Connect Supabase first'); return; }
+  const btn = $('syncNowBtn');
+  btn.disabled = true; btn.textContent = 'Syncing…';
+  try{
+    const {data, error} = await sb.functions.invoke('weekly-sync', {body:{}});
+    if(error) throw error;
+    if(data && data.ok === false) throw new Error(data.error || 'the sync function reported a problem');
+    await init();
+    const warn = (data && data.warnings) || [];
+    toast(warn.length ? 'Synced — ' + warn[0] : 'Numbers pulled in — give them a look');
+    if(warn.length) console.warn('weekly-sync warnings:', warn);
+  }catch(err){
+    console.error(err);
+    const m = String(err.message || err);
+    toast(/not found|404/i.test(m)
+      ? 'No weekly-sync function deployed yet — see AUTOMATION-GUIDE.md'
+      : "Sync didn't run — " + m);
+  }finally{
+    btn.disabled = false; btn.textContent = 'Sync now';
+  }
+};
+
+/* ---------- podcasts ---------- */
+function renderPodcasts(){
+  const {upcoming, byStage} = splitPodcasts(pods);
+  $('podCount').textContent = pods.length;
+
+  const up = $('upcomingList'); up.innerHTML = '';
+  if(!upcoming.length){
+    up.innerHTML = `<p class="empty-note">Nothing on the calendar yet. Give someone a date below and they'll show up here.</p>`;
+  } else {
+    for(const p of upcoming){
+      const d = daysUntil(p.record_date);
+      const when = d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : d < 7 ? 'In ' + d + ' days' : null;
+      const [yy,mm,dd] = p.record_date.split('-').map(Number);
+      up.insertAdjacentHTML('beforeend', `
+        <div class="pod-card${d <= 7 ? ' soon' : ''}">
+          <div class="pod-when">
+            <div class="d">${MONTH_NAMES[mm-1].slice(0,3)} ${dd}</div>
+            <div class="t">${p.record_time ? fmtTime(p.record_time) : String(yy)}</div>
+          </div>
+          <div class="pod-main">
+            <h3>${esc(p.guest)}</h3>
+            ${p.topic ? `<div class="topic">${esc(p.topic)}</div>` : ''}
+          </div>
+          <div class="pod-meta">
+            ${when ? `<span class="tag countdown">${when}</span>` : ''}
+            ${p.format ? `<span class="tag ${p.format}">${p.format === 'in_person' ? 'In person' : 'Virtual'}</span>` : ''}
+            <button class="rowbtn" onclick="editPod('${p.id}')">edit</button>
+          </div>
+        </div>`);
+    }
+  }
+
+  const grid = $('pipeGrid'); grid.innerHTML = '';
+  for(const st of STAGES){
+    const list = byStage[st.key] || [];
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="pipe-col">
+        <h3>${st.label} <span class="n">${list.length}</span></h3>
+        ${list.length ? list.map(p => `
+          <div class="pipe-item" onclick="editPod('${p.id}')">
+            <div class="nm">${esc(p.guest)}</div>
+            <div class="sub">${[p.record_date ? fmtDate(p.record_date) : null,
+                                p.format ? (p.format === 'in_person' ? 'In person' : 'Virtual') : null,
+                                p.topic].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</div>
+          </div>`).join('') : '<div class="pipe-empty">Nobody here yet</div>'}
+      </div>`);
+  }
+}
+function resetPodForm(){
+  editingPod = null;
+  const sel = $('pStage');
+  if(!sel.options.length) sel.innerHTML = STAGES.map(s => `<option value="${s.key}">${s.label}</option>`).join('');
+  sel.value = 'idea';
+  $('pGuest').value = ''; $('pFormat').value = ''; $('pDate').value = ''; $('pTime').value = ''; $('pTopic').value = '';
+  $('pFormEyebrow').textContent = 'Add a guest';
+  $('pFormTitle').textContent = 'New podcast';
+  $('pSaveBtn').textContent = 'Add to list';
+  $('pCancelBtn').classList.add('hidden'); $('pDeleteBtn').classList.add('hidden');
+}
+function editPod(id){
+  const p = pods.find(x => String(x.id) === String(id)); if(!p) return;
+  showTab('podcasts');
+  editingPod = p.id;
+  $('pGuest').value = p.guest || ''; $('pStage').value = p.stage || 'idea';
+  $('pFormat').value = p.format || ''; $('pDate').value = p.record_date || '';
+  $('pTime').value = p.record_time ? p.record_time.slice(0,5) : ''; $('pTopic').value = p.topic || '';
+  $('pFormEyebrow').textContent = 'Editing';
+  $('pFormTitle').textContent = p.guest;
+  $('pSaveBtn').textContent = 'Save changes';
+  $('pCancelBtn').classList.remove('hidden'); $('pDeleteBtn').classList.remove('hidden');
+  window.scrollTo({top: $('pGuest').closest('section').offsetTop - 80, behavior:'smooth'});
+}
+async function savePod(){
+  const guest = $('pGuest').value.trim();
+  if(!guest){ toast('Who is the guest?'); $('pGuest').focus(); return; }
+  const rec = {
+    guest, stage: $('pStage').value, format: $('pFormat').value || null,
+    record_date: $('pDate').value || null, record_time: $('pTime').value || null,
+    topic: $('pTopic').value.trim() || null
+  };
+  if(connected && podsOk){
+    $('pSaveBtn').disabled = true;
+    let res;
+    if(editingPod) res = await sb.from('podcasts').update({...rec, updated_at:new Date().toISOString()}).eq('id', editingPod).select();
+    else          res = await sb.from('podcasts').insert(rec).select();
+    $('pSaveBtn').disabled = false;
+    if(res.error){
+      console.error(res.error);
+      toast(/relation|does not exist/i.test(res.error.message) ? 'Podcast table missing — run supabase-update-2.sql' : "That didn't save — " + res.error.message);
+      return;
+    }
+    const saved = res.data && res.data[0];
+    if(editingPod){ const i = pods.findIndex(p => p.id === editingPod); if(i >= 0) pods[i] = saved; }
+    else pods.push(saved);
+  } else {
+    if(editingPod){ const i = pods.findIndex(p => String(p.id) === String(editingPod)); if(i >= 0) pods[i] = {...pods[i], ...rec}; }
+    else pods.push({...rec, id: 'local-' + Date.now() + '-' + Math.random().toString(36).slice(2,7)});
+  }
+  const was = !!editingPod;
+  renderPodcasts(); resetPodForm();
+  toast(was ? 'Updated' : (rec.record_date ? guest + ' added to the calendar' : guest + ' added to the pipeline'));
+}
+async function deletePod(){
+  if(!editingPod) return;
+  const p = pods.find(x => String(x.id) === String(editingPod));
+  if(!window.confirm('Remove ' + (p ? p.guest : 'this entry') + ' from the list?')) return;
+  if(connected && podsOk){
+    const {error} = await sb.from('podcasts').delete().eq('id', editingPod);
+    if(error){ toast("Couldn't delete — " + error.message); return; }
+  }
+  pods = pods.filter(x => String(x.id) !== String(editingPod));
+  renderPodcasts(); resetPodForm(); toast('Removed');
+}
+$('pSaveBtn').onclick = savePod;
+$('pDeleteBtn').onclick = deletePod;
+$('pCancelBtn').onclick = resetPodForm;
+
+/* ---------- tabs ---------- */
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === name));
+  $('tab-numbers').classList.toggle('hidden', name !== 'numbers');
+  $('tab-podcasts').classList.toggle('hidden', name !== 'podcasts');
+  try{ localStorage.setItem('wh_tab', name); }catch(e){}
+}
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => showTab(t.dataset.tab));
+
+/* ---------- import ---------- */
+$('importBtn').onclick = async () => {
+  $('importBtn').disabled = true; $('importBtn').textContent = 'Importing…';
+  const {error} = await sb.from('weekly_stats').upsert(SEED, {onConflict:'week_date', ignoreDuplicates:true});
+  if(error){ toast('Import failed — ' + error.message); $('importBtn').disabled = false; $('importBtn').textContent = 'Import history'; return; }
+  $('importBanner').classList.add('hidden');
+  toast('All 72 weeks imported');
+  await init();
+};
+
+/* ---------- setup ---------- */
+function openSetup(){
+  $('setupCard').classList.remove('hidden');
+  const saved = getCreds();
+  if(saved){ $('inUrl').value = saved.url; $('inKey').value = saved.key; }
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+$('gearBtn').onclick = openSetup;
+$('openSetupBtn').onclick = openSetup;
+$('closeSetupBtn').onclick = () => $('setupCard').classList.add('hidden');
+$('connectBtn').onclick = async () => {
+  const url = $('inUrl').value.trim().replace(/\/+$/,''), key = $('inKey').value.trim();
+  if(!url.startsWith('https://') || key.length < 20){ $('setupMsg').textContent = "That URL or key doesn't look right."; return; }
+  $('setupMsg').textContent = 'Testing…';
+  try{
+    const test = window.supabase.createClient(url, key);
+    const {error} = await test.from('weekly_stats').select('week_date', {head:true, count:'exact'});
+    if(error) throw error;
+    localStorage.setItem('wh_supabase', JSON.stringify({url, key}));
+    $('setupMsg').textContent = '';
+    $('setupCard').classList.add('hidden');
+    toast('Connected');
+    await init();
+  }catch(err){
+    $('setupMsg').textContent = "Couldn't connect: " + (err.message || 'check the URL, key, and that you ran the SQL files.');
+  }
+};
+
+/* go */
+try{ const t = localStorage.getItem('wh_tab'); if(t) showTab(t); }catch(e){}
+if(!getCreds()) openSetup();
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wise Heart · Content Planner</title>
+<link rel="icon" href='data:image/svg+xml,<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><path d="M30 50 C30 50 10 38 10 24 C10 16 18 10 30 18 C42 10 50 16 50 24 C50 38 30 50 30 50Z" stroke="%23D9877B" stroke-width="3" fill="%23F2D9D2"/></svg>'>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --clay-rose:#D9877B; --deep-rose:#C26F63; --blush:#F2D9D2; --blush-deep:#E9C4BA;
+  --cream:#FBF6F3; --cream-warm:#F5EBE5; --cocoa-ink:#3A2F2C; --cocoa-soft:#5A4A45;
+  --taupe:#8C6F68; --white:#FFFFFF; --dark:#2E2522;
+  --primary:var(--deep-rose); --primary-hover:#a85a4f;
+  --font-display:'Cormorant Garamond',Georgia,serif; --font-body:'Inter',system-ui,sans-serif;
+  --max-w:1100px; --radius:4px; --card-radius:10px;
+  --shadow:0 2px 24px rgba(58,47,44,0.07);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font-body);color:var(--cocoa-ink);background:var(--cream);line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--font-display);font-weight:500;line-height:1.2;color:var(--cocoa-ink)}
+h1{font-size:clamp(2rem,5vw,2.9rem)} h1 em{font-style:italic;color:var(--deep-rose)}
+h2{font-size:clamp(1.5rem,3.5vw,2rem);margin-bottom:6px}
+.container{max-width:var(--max-w);margin:0 auto;padding:0 20px}
+.eyebrow{font-size:.72rem;letter-spacing:.15em;text-transform:uppercase;color:var(--clay-rose);display:block;margin-bottom:8px;font-weight:500}
+.muted{color:var(--taupe);font-size:.85rem}
+section{padding:34px 0 6px}
+
+/* header */
+header.site{background:var(--white);border-bottom:1px solid var(--blush-deep);position:sticky;top:0;z-index:50}
+.site-inner{max-width:var(--max-w);margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:14px}
+.mark svg{width:38px;height:38px;display:block}
+.wordmark{font-family:var(--font-display);font-size:1.35rem;font-weight:500;color:var(--deep-rose);letter-spacing:.02em}
+.wordmark span{color:var(--clay-rose)}
+.wordmark small{display:block;font-family:var(--font-body);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--taupe);line-height:1.3}
+.head-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.pill{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border-radius:99px;font-weight:500}
+.pill.ok{background:var(--blush);color:var(--deep-rose)}
+.pill.preview{background:var(--cream-warm);color:var(--taupe)}
+.gear{background:none;border:none;cursor:pointer;color:var(--taupe);font-size:1.05rem;padding:4px}
+.gear:hover{color:var(--deep-rose)}
+
+/* cards */
+.card{background:var(--white);border:1px solid var(--blush-deep);border-radius:var(--card-radius);padding:22px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.grid.hero{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-top:14px}
+.stat-num{font-family:var(--font-display);font-size:2.2rem;font-weight:600;line-height:1.1}
+.stat-label{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--taupe);font-weight:500}
+.delta{font-size:.82rem;font-weight:500}
+.delta.up{color:var(--deep-rose)} .delta.down{color:var(--taupe);font-style:italic}
+.hero-note{margin-top:14px;color:var(--cocoa-soft);font-size:.95rem}
+.hero-note em{font-family:var(--font-display);font-style:italic;color:var(--deep-rose);font-size:1.05rem}
+
+/* lotus divider */
+.lotus-divider{display:flex;align-items:center;gap:18px;margin:34px 0 0}
+.lotus-divider::before,.lotus-divider::after{content:"";flex:1;height:1px;background:var(--blush-deep)}
+.lotus-divider svg{width:34px;height:34px}
+
+/* form */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:14px}
+.form-grid>div{min-width:0}
+label.f{display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--taupe);font-weight:500;margin-bottom:5px}
+input[type=date],input[type=number],input[type=text],input[type=url],input[type=password]{width:100%;min-width:0;padding:10px 12px;border:1px solid var(--blush-deep);border-radius:var(--radius);background:var(--cream);font-family:var(--font-body);font-size:.95rem;color:var(--cocoa-ink)}
+input[type=date]{-webkit-appearance:none;appearance:none;min-height:44px;display:block}
+input[type=date]::-webkit-date-and-time-value{text-align:left}
+input:focus{outline:none;border-color:var(--clay-rose);background:var(--white)}
+.btn{display:inline-block;background:var(--primary);color:var(--white);font-size:.78rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;border-radius:var(--radius);border:none;cursor:pointer;padding:12px 26px;transition:.15s}
+.btn:hover{background:var(--primary-hover);transform:translateY(-1px)}
+.btn.outline{background:transparent;color:var(--primary);border:1.5px solid var(--primary)}
+.btn.outline:hover{background:var(--primary);color:var(--white)}
+.btn.ghost{background:transparent;color:var(--taupe);border:none;letter-spacing:.06em;padding:12px 10px}
+.btn.ghost:hover{color:var(--deep-rose);transform:none}
+.btn:disabled{opacity:.5;cursor:default;transform:none}
+.form-actions{margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.editing-tag{font-size:.78rem;color:var(--deep-rose);font-style:italic}
+
+/* chips */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.chip{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:99px;border:1px solid var(--blush-deep);background:var(--white);color:var(--taupe);cursor:pointer;font-weight:500;transition:.15s}
+.chip.on{border-color:transparent;color:var(--white)}
+
+/* charts */
+.chart-card{margin-top:14px}
+.chart-wrap{position:relative;height:320px;margin-top:8px}
+@media(max-width:640px){.chart-wrap{height:250px}}
+
+/* records */
+.grid.records{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-top:14px}
+.rec-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dot{width:10px;height:10px;border-radius:50%}
+.rec-head h3{font-size:1.3rem}
+.rec-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--blush-deep);font-size:.88rem}
+.rec-row:last-child{border-bottom:none}
+.rec-row .k{color:var(--taupe)} .rec-row .v{font-weight:500;text-align:right}
+
+/* table */
+.table-wrap{overflow-x:auto;margin-top:14px;background:var(--white);border:1px solid var(--blush-deep);border-radius:var(--card-radius);box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:.88rem;min-width:640px}
+th{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--taupe);text-align:left;padding:12px 14px;border-bottom:1px solid var(--blush-deep);background:var(--cream-warm);position:sticky;top:0}
+td{padding:10px 14px;border-bottom:1px solid var(--cream-warm);white-space:nowrap}
+tr:hover td{background:var(--cream)}
+td .g{font-size:.78rem;margin-left:6px}
+td .g.up{color:var(--deep-rose)} td .g.down{color:var(--taupe);font-style:italic}
+.rowbtn{background:none;border:none;color:var(--taupe);cursor:pointer;font-size:.78rem;letter-spacing:.05em;text-transform:uppercase}
+.rowbtn:hover{color:var(--deep-rose)}
+.wk-row{cursor:pointer}
+.note-row td{white-space:normal;background:var(--cream-warm);color:var(--cocoa-soft);font-style:italic;font-size:.84rem}
+.note-row .rowbtn{font-style:normal;margin-left:10px}
+@media(max-width:640px){
+  table{min-width:0;font-size:.82rem}
+  th,td{padding:9px 8px}
+  td .g{font-size:.72rem}
+  td:first-child{white-space:normal;line-height:1.35}
+}
+
+/* banners / setup */
+.banner{background:var(--blush);border:1px solid var(--blush-deep);border-radius:var(--card-radius);padding:18px 22px;margin-top:20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.banner p{flex:1;min-width:220px;color:var(--cocoa-soft);font-size:.92rem}
+.setup-steps{margin:14px 0 4px;padding-left:0;list-style:none;counter-reset:st}
+.setup-steps li{counter-increment:st;position:relative;padding:8px 0 8px 42px;color:var(--cocoa-soft);font-size:.93rem}
+.setup-steps li::before{content:counter(st);position:absolute;left:0;top:8px;width:28px;height:28px;border-radius:50%;background:var(--blush);color:var(--deep-rose);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.85rem}
+.setup-steps code{background:var(--cream-warm);padding:2px 7px;border-radius:4px;font-size:.84rem;color:var(--deep-rose)}
+.setup-inputs{display:grid;gap:12px;margin-top:14px}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(80px);background:var(--dark);color:var(--cream);padding:12px 26px;border-radius:99px;font-size:.88rem;opacity:0;transition:.3s;z-index:99;box-shadow:0 6px 30px rgba(46,37,34,.3)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.hidden{display:none !important}
+
+/* footer */
+footer{background:var(--dark);color:var(--blush);margin-top:56px;padding:34px 0}
+footer .container{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+footer .wordmark{color:var(--blush)} footer .wordmark span{color:var(--clay-rose)}
+footer p{font-size:.8rem;color:#B9A49D;margin-left:auto}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="site-inner">
+    <div class="mark">
+      <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M30 50 C30 50 10 38 10 24 C10 16 18 10 30 18 C42 10 50 16 50 24 C50 38 30 50 30 50Z" stroke="#D9877B" stroke-width="1.6" fill="#F2D9D2"/>
+        <path d="M30 50 C30 50 20 35 20 26 C20 20 24 16 30 20 C36 16 40 20 40 26 C40 35 30 50 30 50Z" stroke="#C26F63" stroke-width="1.4" fill="none"/>
+        <path d="M30 50 L30 18" stroke="#D9877B" stroke-width="0.9" opacity="0.5"/>
+      </svg>
+    </div>
+    <div class="wordmark">Wise Heart<span> Planner</span><small>Weekly follower tracker</small></div>
+    <div class="head-right">
+      <span id="syncPill" class="pill preview">Preview</span>
+      <button class="gear" id="gearBtn" title="Connection settings">&#9881;</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- SETUP -->
+  <div id="setupCard" class="card hidden" style="margin-top:24px">
+    <span class="eyebrow">One-time setup</span>
+    <h2>Connect your <em style="font-style:italic;color:var(--deep-rose)">Supabase</em></h2>
+    <p class="muted">This is where your numbers live, so every device stays in sync. Takes about five minutes, and the free plan is plenty.</p>
+    <ol class="setup-steps">
+      <li>Go to <strong>supabase.com</strong>, sign up (free), and create a <strong>New project</strong> — name it anything, e.g. <code>wise-heart</code>.</li>
+      <li>In the left menu open <strong>SQL Editor</strong>, paste the whole <code>supabase-setup.sql</code> file that came with this app, and press <strong>Run</strong>. That creates the table and imports all 72 weeks of your spreadsheet.</li>
+      <li>Open <strong>Project Settings → API</strong>, copy the <strong>Project URL</strong> and the <strong>anon public</strong> key, and paste them below.</li>
+    </ol>
+    <div class="setup-inputs">
+      <div><label class="f" for="inUrl">Project URL</label><input type="url" id="inUrl" placeholder="https://xxxx.supabase.co"></div>
+      <div><label class="f" for="inKey">Anon public key</label><input type="text" id="inKey" placeholder="eyJhbGciOi..."></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" id="connectBtn">Connect</button>
+      <button class="btn ghost" id="closeSetupBtn">Not now</button>
+      <span class="muted" id="setupMsg"></span>
+    </div>
+  </div>
+
+  <div id="importBanner" class="banner hidden">
+    <p><strong>Your table is empty.</strong> Want me to import the 72 weeks of history from your spreadsheet (Feb 27, 2025 – Jul 9, 2026)?</p>
+    <button class="btn" id="importBtn">Import history</button>
+  </div>
+
+  <div id="previewBanner" class="banner hidden">
+    <p><strong>Preview mode.</strong> You're seeing your spreadsheet history, but new entries won't be saved anywhere yet. Connect Supabase to start syncing.</p>
+    <button class="btn outline" id="openSetupBtn">Set up sync</button>
+  </div>
+
+  <div id="missedBanner" class="banner hidden">
+    <p id="missedBannerText"></p>
+    <button class="btn" id="logMissedBtn">Log it now</button>
+  </div>
+
+  <!-- HERO STATS -->
+  <section>
+    <span class="eyebrow">This week</span>
+    <h1>Where the <em>Wise Heart</em> audience stands</h1>
+    <div class="grid hero" id="heroGrid"></div>
+    <p class="hero-note" id="heroNote"></p>
+  </section>
+
+  <div class="lotus-divider">
+    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M30 50 C30 50 10 38 10 24 C10 16 18 10 30 18 C42 10 50 16 50 24 C50 38 30 50 30 50Z" stroke="#D9877B" stroke-width="1" fill="none"/>
+      <path d="M30 50 C30 50 20 35 20 26 C20 20 24 16 30 20 C36 16 40 20 40 26 C40 35 30 50 30 50Z" stroke="#C26F63" stroke-width="1" fill="none"/>
+      <path d="M30 50 L30 18" stroke="#D9877B" stroke-width="0.75" opacity="0.5"/>
+    </svg>
+  </div>
+
+  <!-- ENTRY FORM -->
+  <section>
+    <span class="eyebrow">Thursday check-in</span>
+    <h2>Log this week's numbers</h2>
+    <p class="muted">Fields start with last week's counts — just update what changed.</p>
+    <div class="card" style="margin-top:14px">
+      <div class="form-grid">
+        <div><label class="f" for="fDate">Week of</label><input type="date" id="fDate"></div>
+        <div><label class="f" for="fYt">YouTube</label><input type="number" id="fYt" min="0" inputmode="numeric"></div>
+        <div><label class="f" for="fTt">TikTok</label><input type="number" id="fTt" min="0" inputmode="numeric"></div>
+        <div><label class="f" for="fIg">Instagram</label><input type="number" id="fIg" min="0" inputmode="numeric"></div>
+      </div>
+      <div style="margin-top:14px"><label class="f" for="fNotes">Notes <span style="text-transform:none;letter-spacing:0">(optional)</span></label><input type="text" id="fNotes" placeholder="e.g. street reading short took off"></div>
+      <div class="form-actions">
+        <button class="btn" id="saveBtn">Save week</button>
+        <button class="btn ghost hidden" id="deleteBtn">Delete this week</button>
+        <span class="editing-tag hidden" id="editTag">editing an existing week</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHARTS -->
+  <section>
+    <span class="eyebrow">The long view</span>
+    <h2>Growth over time</h2>
+    <div class="chips" id="platformChips"></div>
+    <div class="card chart-card"><div class="chart-wrap"><canvas id="lineChart"></canvas></div></div>
+    <div class="card chart-card"><span class="eyebrow" style="margin-bottom:2px">New followers gained per month</span><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
+  </section>
+
+  <!-- RECORDS -->
+  <section>
+    <span class="eyebrow">Bests &amp; averages</span>
+    <h2>What the numbers say</h2>
+    <div class="grid records" id="recordsGrid"></div>
+  </section>
+
+  <!-- HISTORY -->
+  <section>
+    <span class="eyebrow">Every Thursday so far</span>
+    <h2>History</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Week of</th><th>YouTube</th><th>TikTok</th><th>Instagram</th></tr></thead>
+      <tbody id="historyBody"></tbody>
+    </table></div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="container">
+    <div class="wordmark">Wise Heart<span> Connect</span></div>
+    <p>Portland, Oregon &nbsp;·&nbsp; data syncs through your Supabase</p>
+  </div>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+/* ================= CONFIG =================
+   Option A: paste your Supabase details here, save the file, done.
+   Option B: leave as-is and use the in-app setup screen (saved per browser). */
+const SUPABASE_URL      = "https://ywjtbzxfdudrqsvsslzs.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Vt5ul1fZGuwxG8zq_ejyNw_kJackpiu";
+
+/* Spreadsheet history (used for preview + one-click import) */
+const SEED = [["2025-02-27",25,14,4,null],["2025-03-06",34,49,7,null],["2025-03-13",39,71,9,null],["2025-03-20",44,75,11,null],["2025-03-27",47,85,11,null],["2025-04-03",48,91,12,null],["2025-04-10",51,102,12,null],["2025-04-17",54,114,12,null],["2025-04-24",56,196,14,null],["2025-05-01",61,226,15,null],["2025-05-08",65,269,18,null],["2025-05-15",67,320,18,null],["2025-05-22",78,376,18,null],["2025-05-29",82,414,19,"YT 6, TT 29, IN 1.2"],["2025-06-05",91,436,19,null],["2025-06-12",93,459,19,null],["2025-06-19",99,470,19,null],["2025-06-26",102,492,19,null],["2025-07-03",114,505,19,null],["2025-07-10",121,516,19,null],["2025-07-17",133,528,23,null],["2025-07-24",148,540,23,null],["2025-07-31",167,549,23,null],["2025-08-07",175,570,24,null],["2025-08-14",191,597,25,null],["2025-08-21",210,616,25,null],["2025-08-28",218,620,25,"YT 8, TT 23, IN  0.9"],["2025-09-04",230,630,26,null],["2025-09-11",234,637,26,null],["2025-09-18",242,642,26,null],["2025-09-25",342,650,26,null],["2025-10-02",556,676,26,null],["2025-10-09",742,703,26,null],["2025-10-16",850,706,26,null],["2025-10-23",873,706,26,null],["2025-10-30",894,719,27,null],["2025-11-06",912,785,28,null],["2025-11-13",922,794,29,null],["2025-11-20",940,797,30,null],["2025-11-27",951,823,31,"YT 24 TT 20 IN 0.7"],["2025-12-04",958,830,31,null],["2025-12-11",971,834,31,null],["2025-12-18",981,837,31,null],["2025-12-25",989,842,31,null],["2026-01-01",993,846,31,null],["2026-01-08",1004,851,31,null],["2026-01-15",1018,854,31,null],["2026-01-22",1031,871,31,null],["2026-01-29",1041,883,31,null],["2026-02-05",1059,900,30,null],["2026-02-12",1099,902,30,null],["2026-02-19",1116,900,30,null],["2026-02-26",1135,897,30,"YT 21, TT 17, IN 0.5"],["2026-03-05",1145,891,31,null],["2026-03-12",1162,892,31,null],["2026-03-19",1171,898,31,null],["2026-03-26",1192,903,33,null],["2026-04-02",1209,903,32,null],["2026-04-09",1238,912,32,null],["2026-04-16",1240,917,32,null],["2026-04-23",1259,919,33,null],["2026-04-30",1269,921,33,null],["2026-05-07",1285,926,33,null],["2026-05-14",1307,926,33,null],["2026-05-21",1317,930,33,null],["2026-05-28",1331,937,36,null],["2026-06-04",1343,937,37,null],["2026-06-11",1352,940,37,null],["2026-06-18",1365,961,37,null],["2026-06-25",1376,970,39,null],["2026-07-02",1385,972,42,null],["2026-07-09",1384,983,47,null]]
+  .map(r => ({week_date:r[0], youtube:r[1], tiktok:r[2], instagram:r[3], notes:r[4]}));
+
+/*STATS-CORE-START*/
+const PLATFORMS = [
+  {key:'youtube',   label:'YouTube',   color:'#C26F63'},
+  {key:'tiktok',    label:'TikTok',    color:'#3A2F2C'},
+  {key:'instagram', label:'Instagram', color:'#8C6F68'}
+];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+function addDays(iso, n){
+  const [y,m,d] = iso.split('-').map(Number);
+  const t = new Date(Date.UTC(y, m-1, d + n));
+  return t.toISOString().slice(0,10);
+}
+function todayISO(){
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+}
+function lastThursday(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  const dow = new Date(Date.UTC(y, m-1, d)).getUTCDay(); // 0=Sun … 4=Thu
+  return addDays(iso, -((dow - 4 + 7) % 7));
+}
+function missedThursdays(rows){
+  if(!rows.length) return [];
+  const newest = rows.reduce((mx,r) => r.week_date > mx ? r.week_date : mx, rows[0].week_date);
+  const target = lastThursday(todayISO());
+  const out = [];
+  for(let cur = addDays(newest, 7); cur <= target; cur = addDays(cur, 7)) out.push(cur);
+  return out;
+}
+function fmtDate(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  return MONTH_NAMES[m-1].slice(0,3) + ' ' + d + ', ' + y;
+}
+function fmtMonth(ym){
+  const [y,m] = ym.split('-').map(Number);
+  return MONTH_NAMES[m-1] + ' ' + y;
+}
+function fmtMonthShort(ym){
+  const [y,m] = ym.split('-').map(Number);
+  return MONTH_NAMES[m-1].slice(0,3) + " '" + String(y).slice(2);
+}
+function mean(a){ return a.length ? a.reduce((s,x)=>s+x,0)/a.length : null; }
+function computeStats(rows){
+  const s = { weeks: rows.length, perPlatform:{}, monthKeys:[], monthly:{}, totalNow:0, totalFirst:0 };
+  if(!rows.length) return s;
+  s.first = rows[0].week_date;
+  s.last  = rows[rows.length-1].week_date;
+  const monthly = {}; // ym -> {youtube, tiktok, instagram} gains
+  for(const p of PLATFORMS){
+    const vals = rows.map(r => r[p.key] ?? 0);
+    const gains = [];
+    for(let j=1; j<vals.length; j++) gains.push(vals[j]-vals[j-1]);
+    for(let j=1; j<rows.length; j++){
+      const ym = rows[j].week_date.slice(0,7);
+      if(!monthly[ym]) monthly[ym] = {youtube:0, tiktok:0, instagram:0};
+      monthly[ym][p.key] += gains[j-1];
+    }
+    let bestWeek = null;
+    for(let j=1; j<rows.length; j++){
+      if(!bestWeek || gains[j-1] > bestWeek.gain) bestWeek = {date: rows[j].week_date, gain: gains[j-1]};
+    }
+    s.perPlatform[p.key] = {
+      current: vals[vals.length-1],
+      lastGain: gains.length ? gains[gains.length-1] : null,
+      avgWeekly: mean(gains),
+      avgLast4: mean(gains.slice(-4)),
+      bestWeek
+    };
+    s.totalNow  += vals[vals.length-1];
+    s.totalFirst += vals[0];
+  }
+  s.monthKeys = Object.keys(monthly).sort();
+  s.monthly = monthly;
+  for(const p of PLATFORMS){
+    const gainsByMonth = s.monthKeys.map(ym => monthly[ym][p.key]);
+    let bestMonth = null;
+    s.monthKeys.forEach((ym,i) => { if(!bestMonth || gainsByMonth[i] > bestMonth.gain) bestMonth = {ym, gain: gainsByMonth[i]}; });
+    s.perPlatform[p.key].avgMonthly = mean(gainsByMonth);
+    s.perPlatform[p.key].bestMonth = bestMonth;
+  }
+  return s;
+}
+/*STATS-CORE-END*/
+
+/* ================= APP ================= */
+const $ = id => document.getElementById(id);
+let sb = null, rows = [], connected = false, editingDate = null;
+let lineChart = null, barChart = null;
+const visible = {youtube:true, tiktok:true, instagram:true};
+
+function getCreds(){
+  if(SUPABASE_URL.startsWith('https://') && !SUPABASE_ANON_KEY.startsWith('PASTE')) return {url:SUPABASE_URL, key:SUPABASE_ANON_KEY};
+  try{
+    const saved = JSON.parse(localStorage.getItem('wh_supabase') || 'null');
+    if(saved && saved.url && saved.key) return saved;
+  }catch(e){}
+  return null;
+}
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 3200);
+}
+function num(n){ return n==null ? '—' : Number(n).toLocaleString('en-US'); }
+function fmtAvg(n){ return n==null ? '—' : (Math.abs(n) >= 10 ? Math.round(n).toLocaleString('en-US') : (Math.round(n*10)/10).toString()); }
+function deltaHtml(g, cls){
+  if(g == null) return '';
+  const sign = g > 0 ? '+' : '';
+  return `<span class="${cls} ${g >= 0 ? 'up':'down'}">${sign}${num(g)}</span>`;
+}
+
+async function init(){
+  const creds = getCreds();
+  if(creds){
+    try{
+      sb = window.supabase.createClient(creds.url, creds.key);
+      const {data, error} = await sb.from('weekly_stats').select('*').order('week_date', {ascending:true});
+      if(error) throw error;
+      connected = true;
+      rows = data || [];
+      $('syncPill').textContent = 'Synced'; $('syncPill').className = 'pill ok';
+      $('previewBanner').classList.add('hidden');
+      if(rows.length === 0 && SEED.length){ $('importBanner').classList.remove('hidden'); }
+    }catch(err){
+      console.error(err);
+      connected = false; sb = null;
+      toast("Couldn't reach Supabase — showing preview data");
+    }
+  }
+  if(!connected){
+    rows = SEED.slice();
+    $('syncPill').textContent = 'Preview'; $('syncPill').className = 'pill preview';
+    $('previewBanner').classList.remove('hidden');
+  }
+  renderAll();
+  resetForm();
+}
+
+function renderAll(){
+  const s = computeStats(rows);
+  renderHero(s); renderRecords(s); renderTable(s); renderCharts(s);
+  updateMissedBanner();
+}
+
+function updateMissedBanner(){
+  const missed = missedThursdays(rows);
+  const banner = $('missedBanner');
+  if(!missed.length){ banner.classList.add('hidden'); return; }
+  $('missedBannerText').innerHTML = missed.length === 1
+    ? `<strong>Thursday slipped by.</strong> The week of ${fmtDate(missed[0])} hasn't been logged yet.`
+    : `<strong>${missed.length} Thursdays are waiting:</strong> ${missed.map(fmtDate).join(', ')}`;
+  banner.classList.remove('hidden');
+}
+
+function renderHero(s){
+  const grid = $('heroGrid'); grid.innerHTML = '';
+  for(const p of PLATFORMS){
+    const st = s.perPlatform[p.key]; if(!st) continue;
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="card">
+        <div class="stat-label"><span class="dot" style="display:inline-block;background:${p.color};margin-right:6px"></span>${p.label}</div>
+        <div class="stat-num">${num(st.current)}</div>
+        <div>${deltaHtml(st.lastGain,'delta')} <span class="muted">this week</span></div>
+      </div>`);
+  }
+  const totalGain = PLATFORMS.reduce((t,p)=> t + (s.perPlatform[p.key]?.lastGain ?? 0), 0);
+  grid.insertAdjacentHTML('beforeend', `
+    <div class="card" style="background:var(--dark);border-color:var(--dark)">
+      <div class="stat-label" style="color:var(--blush-deep)">Everyone together</div>
+      <div class="stat-num" style="color:var(--cream)">${num(s.totalNow)}</div>
+      <div>${deltaHtml(totalGain,'delta')} <span style="color:#B9A49D;font-size:.85rem">this week</span></div>
+    </div>`);
+  const months = Math.round((new Date(s.last) - new Date(s.first)) / (1000*3600*24*30.44));
+  $('heroNote').innerHTML = `You've logged <em>${s.weeks} Thursdays</em> across ${months} months — the whole audience has grown from ${num(s.totalFirst)} to <em>${num(s.totalNow)}</em>.`;
+}
+
+function renderRecords(s){
+  const grid = $('recordsGrid'); grid.innerHTML = '';
+  for(const p of PLATFORMS){
+    const st = s.perPlatform[p.key]; if(!st) continue;
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="card">
+        <div class="rec-head"><span class="dot" style="background:${p.color}"></span><h3>${p.label}</h3></div>
+        <div class="rec-row"><span class="k">Average per week</span><span class="v">${fmtAvg(st.avgWeekly)} new</span></div>
+        <div class="rec-row"><span class="k">Last 4 weeks</span><span class="v">${fmtAvg(st.avgLast4)} /wk</span></div>
+        <div class="rec-row"><span class="k">Average per month</span><span class="v">${fmtAvg(st.avgMonthly)} new</span></div>
+        <div class="rec-row"><span class="k">Best month</span><span class="v">${st.bestMonth ? fmtMonth(st.bestMonth.ym) + ' · +' + num(st.bestMonth.gain) : '—'}</span></div>
+        <div class="rec-row"><span class="k">Best week</span><span class="v">${st.bestWeek ? fmtDate(st.bestWeek.date) + ' · +' + num(st.bestWeek.gain) : '—'}</span></div>
+      </div>`);
+  }
+}
+
+function renderTable(s){
+  const body = $('historyBody'); body.innerHTML = '';
+  const sorted = rows.slice().sort((a,b) => b.week_date.localeCompare(a.week_date));
+  const byDate = {}; rows.forEach((r,i) => byDate[r.week_date] = i);
+  for(const r of sorted){
+    const i = byDate[r.week_date];
+    const prev = i > 0 ? rows[i-1] : null;
+    const cell = k => `${num(r[k])}${prev ? deltaHtml(r[k]-prev[k],'g') : ''}`;
+    body.insertAdjacentHTML('beforeend', `
+      <tr class="wk-row" onclick="toggleNote('${r.week_date}')">
+        <td>${fmtDate(r.week_date)}</td>
+        <td>${cell('youtube')}</td><td>${cell('tiktok')}</td><td>${cell('instagram')}</td>
+      </tr>
+      <tr class="note-row hidden" id="note-${r.week_date}">
+        <td colspan="4">${r.notes || 'No notes for this week.'}<button class="rowbtn" onclick="event.stopPropagation();editWeek('${r.week_date}')">edit week</button></td>
+      </tr>`);
+  }
+}
+
+function toggleNote(d){
+  const el = document.getElementById('note-' + d);
+  if(el) el.classList.toggle('hidden');
+}
+
+function chartDefaults(){
+  Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+  Chart.defaults.color = '#8C6F68';
+  Chart.defaults.borderColor = 'rgba(233,196,186,.45)';
+}
+function renderCharts(s){
+  chartDefaults();
+  const labels = rows.map(r => r.week_date);
+  const lineDs = PLATFORMS.map(p => ({
+    label: p.label, data: rows.map(r => r[p.key]),
+    borderColor: p.color, backgroundColor: p.color,
+    tension: .3, pointRadius: 0, pointHitRadius: 12, borderWidth: 2.2,
+    hidden: !visible[p.key]
+  }));
+  if(lineChart) lineChart.destroy();
+  lineChart = new Chart($('lineChart'), {
+    type:'line',
+    data:{labels, datasets: lineDs},
+    options:{
+      responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
+      plugins:{ legend:{display:false},
+        tooltip:{ backgroundColor:'#2E2522', titleFont:{family:"'Inter'"},
+          callbacks:{ title: items => fmtDate(items[0].label) } } },
+      scales:{
+        x:{ ticks:{ maxTicksLimit: 10, callback: function(v){ return fmtMonthShort(this.getLabelForValue(v).slice(0,7)); } }, grid:{display:false} },
+        y:{ beginAtZero:true, ticks:{precision:0} }
+      }
+    }
+  });
+  const barDs = PLATFORMS.map(p => ({
+    label: p.label, data: s.monthKeys.map(ym => s.monthly[ym][p.key]),
+    backgroundColor: p.color + 'CC', borderRadius: 3, hidden: !visible[p.key]
+  }));
+  if(barChart) barChart.destroy();
+  barChart = new Chart($('barChart'), {
+    type:'bar',
+    data:{labels: s.monthKeys.map(fmtMonthShort), datasets: barDs},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{backgroundColor:'#2E2522'} },
+      scales:{ x:{grid:{display:false}}, y:{ticks:{precision:0}} }
+    }
+  });
+  renderChips();
+}
+function renderChips(){
+  const wrap = $('platformChips'); wrap.innerHTML = '';
+  for(const p of PLATFORMS){
+    const on = visible[p.key];
+    const b = document.createElement('button');
+    b.className = 'chip' + (on ? ' on' : '');
+    if(on) b.style.background = p.color;
+    b.textContent = p.label;
+    b.onclick = () => { visible[p.key] = !visible[p.key]; renderCharts(computeStats(rows)); };
+    wrap.appendChild(b);
+  }
+}
+
+/* ---------- form ---------- */
+function resetForm(){
+  editingDate = null;
+  $('editTag').classList.add('hidden'); $('deleteBtn').classList.add('hidden');
+  $('saveBtn').textContent = 'Save week';
+  const last = rows.length ? rows[rows.length-1] : null;
+  const missed = missedThursdays(rows);
+  $('fDate').value = missed.length ? missed[0]
+    : (last ? addDays(last.week_date, 7) : todayISO());
+  $('fYt').value = last ? last.youtube : '';
+  $('fTt').value = last ? last.tiktok : '';
+  $('fIg').value = last ? last.instagram : '';
+  $('fNotes').value = '';
+}
+function editWeek(date){
+  const r = rows.find(x => x.week_date === date); if(!r) return;
+  editingDate = date;
+  $('fDate').value = r.week_date;
+  $('fYt').value = r.youtube; $('fTt').value = r.tiktok; $('fIg').value = r.instagram;
+  $('fNotes').value = r.notes || '';
+  $('editTag').classList.remove('hidden'); $('deleteBtn').classList.remove('hidden');
+  $('saveBtn').textContent = 'Update week';
+  window.scrollTo({top: $('fDate').closest('section').offsetTop - 80, behavior:'smooth'});
+}
+$('fDate').addEventListener('change', () => {
+  const r = rows.find(x => x.week_date === $('fDate').value);
+  if(r) editWeek(r.week_date);
+  else if(editingDate){ editingDate = null; $('editTag').classList.add('hidden'); $('deleteBtn').classList.add('hidden'); $('saveBtn').textContent = 'Save week'; }
+});
+
+async function saveWeek(){
+  const week_date = $('fDate').value;
+  const youtube = parseInt($('fYt').value, 10), tiktok = parseInt($('fTt').value, 10), instagram = parseInt($('fIg').value, 10);
+  if(!week_date || isNaN(youtube) || isNaN(tiktok) || isNaN(instagram)){ toast('Please fill the date and all three numbers'); return; }
+  const rec = {week_date, youtube, tiktok, instagram, notes: $('fNotes').value.trim() || null};
+  if(connected){
+    $('saveBtn').disabled = true;
+    const {error} = await sb.from('weekly_stats').upsert({...rec, updated_at: new Date().toISOString()}, {onConflict:'week_date'});
+    $('saveBtn').disabled = false;
+    if(error){ console.error(error); toast('Hmm, that didn\'t save — ' + error.message); return; }
+  }
+  const idx = rows.findIndex(r => r.week_date === week_date);
+  if(idx >= 0) rows[idx] = rec; else { rows.push(rec); rows.sort((a,b) => a.week_date.localeCompare(b.week_date)); }
+  renderAll(); resetForm();
+  const behind = missedThursdays(rows).length;
+  toast(behind
+    ? `${connected ? 'Saved' : 'Noted'} — ${behind} more ${behind === 1 ? 'Thursday' : 'Thursdays'} to catch up`
+    : (connected ? 'Saved — see you next Thursday' : 'Noted for this session (connect Supabase to keep it)'));
+}
+async function deleteWeek(){
+  if(!editingDate) return;
+  if(!window.confirm('Delete the week of ' + fmtDate(editingDate) + '?')) return;
+  if(connected){
+    const {error} = await sb.from('weekly_stats').delete().eq('week_date', editingDate);
+    if(error){ toast('Couldn\'t delete — ' + error.message); return; }
+  }
+  rows = rows.filter(r => r.week_date !== editingDate);
+  renderAll(); resetForm(); toast('Week deleted');
+}
+$('saveBtn').onclick = saveWeek;
+$('deleteBtn').onclick = deleteWeek;
+$('logMissedBtn').onclick = () => {
+  resetForm();
+  window.scrollTo({top: $('fDate').closest('section').offsetTop - 80, behavior:'smooth'});
+  $('fYt').focus({preventScroll:true});
+};
+
+/* ---------- import ---------- */
+$('importBtn').onclick = async () => {
+  $('importBtn').disabled = true; $('importBtn').textContent = 'Importing…';
+  const {error} = await sb.from('weekly_stats').upsert(SEED, {onConflict:'week_date', ignoreDuplicates:true});
+  if(error){ toast('Import failed — ' + error.message); $('importBtn').disabled = false; $('importBtn').textContent = 'Import history'; return; }
+  $('importBanner').classList.add('hidden');
+  toast('All 72 weeks imported');
+  await init();
+};
+
+/* ---------- setup ---------- */
+function openSetup(){
+  $('setupCard').classList.remove('hidden');
+  const saved = getCreds();
+  if(saved){ $('inUrl').value = saved.url; $('inKey').value = saved.key; }
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+$('gearBtn').onclick = openSetup;
+$('openSetupBtn').onclick = openSetup;
+$('closeSetupBtn').onclick = () => $('setupCard').classList.add('hidden');
+$('connectBtn').onclick = async () => {
+  const url = $('inUrl').value.trim().replace(/\/+$/,''), key = $('inKey').value.trim();
+  if(!url.startsWith('https://') || key.length < 20){ $('setupMsg').textContent = 'That URL or key doesn\'t look right.'; return; }
+  $('setupMsg').textContent = 'Testing…';
+  try{
+    const test = window.supabase.createClient(url, key);
+    const {error} = await test.from('weekly_stats').select('week_date', {head:true, count:'exact'});
+    if(error) throw error;
+    localStorage.setItem('wh_supabase', JSON.stringify({url, key}));
+    $('setupMsg').textContent = '';
+    $('setupCard').classList.add('hidden');
+    toast('Connected');
+    await init();
+  }catch(err){
+    $('setupMsg').textContent = 'Couldn\'t connect: ' + (err.message || 'check the URL, key, and that you ran the SQL file.');
+  }
+};
+
+/* go */
+if(!getCreds()) openSetup();
+init();
+</script>
+</body>
+</html>
