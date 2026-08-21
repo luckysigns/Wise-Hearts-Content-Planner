@@ -143,6 +143,10 @@ td .g.up{color:var(--deep-rose)} td .g.down{color:var(--taupe);font-style:italic
 .pipe-item:hover .nm{color:var(--deep-rose)}
 .pipe-item .nm{font-weight:500;font-size:.93rem}
 .pipe-item .sub{font-size:.78rem;color:var(--taupe)}
+.form-grid.one-up{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:640px){.form-grid.one-up{grid-template-columns:1fr}}
+.views-counter{margin-top:9px;font-size:.88rem;color:var(--taupe)}
+.views-counter .vc-num{font-family:var(--font-display);font-size:1.2rem;color:var(--deep-rose);margin:0 7px}
 .pipe-item .rowbtn{padding:0;margin-top:5px;font-size:.7rem;color:var(--clay-rose)}
 .pipe-item .rowbtn:hover{color:var(--deep-rose)}
 .pod-meta .rowbtn + .rowbtn{margin-left:12px}
@@ -246,76 +250,10 @@ footer p{font-size:.8rem;color:#B9A49D;margin-left:auto}
       <h1>Where the <em>Wise Heart</em> audience stands</h1>
       <div class="grid hero" id="heroGrid"></div>
       <p class="hero-note" id="heroNote"></p>
+      <p class="views-counter hidden" id="viewsCounter"></p>
     </section>
 
-    <section>
-      <span class="eyebrow">Total views</span>
-      <h2>How far the work is travelling</h2>
-      <div class="grid hero" id="viewsGrid"></div>
-      <p class="empty-note hidden" id="viewsEmpty">No view counts logged yet. Add them in this week's check-in below — once there are two weeks, the averages and charts fill in here.</p>
-    </section>
-
-    <div class="lotus-divider">
-      <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M30 50 C30 50 10 38 10 24 C10 16 18 10 30 18 C42 10 50 16 50 24 C50 38 30 50 30 50Z" stroke="#D9877B" stroke-width="1" fill="none"/>
-        <path d="M30 50 C30 50 20 35 20 26 C20 20 24 16 30 20 C36 16 40 20 40 26 C40 35 30 50 30 50Z" stroke="#C26F63" stroke-width="1" fill="none"/>
-        <path d="M30 50 L30 18" stroke="#D9877B" stroke-width="0.75" opacity="0.5"/>
-      </svg>
-    </div>
-
-    <section>
-      <span class="eyebrow">Thursday check-in</span>
-      <h2>Log this week's numbers</h2>
-      <p class="muted">Fields start with last week's counts — just update what changed. Views are optional.</p>
-      <div class="card" style="margin-top:14px">
-        <div class="form-grid">
-          <div><label class="f" for="fDate">Week of</label><input type="date" id="fDate"></div>
-          <div><label class="f" for="fYt">YouTube subs</label><input type="number" id="fYt" min="0" inputmode="numeric"></div>
-          <div><label class="f" for="fTt">TikTok followers</label><input type="number" id="fTt" min="0" inputmode="numeric"></div>
-          <div><label class="f" for="fIg">Instagram followers</label><input type="number" id="fIg" min="0" inputmode="numeric"></div>
-        </div>
-        <div class="subhead">Lifetime views <span style="text-transform:none;letter-spacing:0;color:var(--taupe)">— optional, leave blank to skip</span></div>
-        <div class="form-grid">
-          <div><label class="f" for="fYtV">YouTube views</label><input type="number" id="fYtV" min="0" inputmode="numeric" placeholder="—"></div>
-          <div><label class="f" for="fTtV">TikTok views</label><input type="number" id="fTtV" min="0" inputmode="numeric" placeholder="—"></div>
-          <div><label class="f" for="fIgV">Instagram views</label><input type="number" id="fIgV" min="0" inputmode="numeric" placeholder="—"></div>
-        </div>
-        <div style="margin-top:14px"><label class="f" for="fNotes">Notes <span style="text-transform:none;letter-spacing:0">(optional)</span></label><input type="text" id="fNotes" placeholder="e.g. street reading short took off"></div>
-        <div class="form-actions">
-          <button class="btn" id="saveBtn">Save week</button>
-          <button class="btn ghost hidden" id="deleteBtn">Delete this week</button>
-          <span class="editing-tag hidden" id="editTag">editing an existing week</span>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <span class="eyebrow">The long view</span>
-      <h2>Growth over time</h2>
-      <div class="chips" id="platformChips"></div>
-      <div class="card chart-card"><span class="eyebrow" style="margin-bottom:2px">Followers</span><div class="chart-wrap"><canvas id="lineChart"></canvas></div></div>
-      <div class="card chart-card"><span class="eyebrow" style="margin-bottom:2px">New followers gained per month</span><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
-      <div class="card chart-card hidden" id="viewsChartCard"><span class="eyebrow" style="margin-bottom:2px">Views gained per week</span><div class="chart-wrap"><canvas id="viewsChart"></canvas></div></div>
-    </section>
-
-    <section>
-      <span class="eyebrow">Bests &amp; averages</span>
-      <h2>What the numbers say</h2>
-      <div class="grid records" id="recordsGrid"></div>
-    </section>
-
-    <section>
-      <span class="eyebrow">Every Thursday so far</span>
-      <h2>History</h2>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Week of</th><th>YouTube</th><th>TikTok</th><th>Instagram</th><th>Views (YT/TT/IG)</th></tr></thead>
-        <tbody id="historyBody"></tbody>
-      </table></div>
-    </section>
-
-  </div>
-
-  <!-- ============ PODCASTS TAB ============ -->
+  <!-- ============ PODCASTS ============ -->
   <div id="tab-podcasts">
 
     <section>
@@ -366,6 +304,64 @@ footer p{font-size:.8rem;color:#B9A49D;margin-left:auto}
 
   </div>
 
+    <div class="lotus-divider">
+      <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M30 50 C30 50 10 38 10 24 C10 16 18 10 30 18 C42 10 50 16 50 24 C50 38 30 50 30 50Z" stroke="#D9877B" stroke-width="1" fill="none"/>
+        <path d="M30 50 C30 50 20 35 20 26 C20 20 24 16 30 20 C36 16 40 20 40 26 C40 35 30 50 30 50Z" stroke="#C26F63" stroke-width="1" fill="none"/>
+        <path d="M30 50 L30 18" stroke="#D9877B" stroke-width="0.75" opacity="0.5"/>
+      </svg>
+    </div>
+
+    <section>
+      <span class="eyebrow">Thursday check-in</span>
+      <h2>Log this week's numbers</h2>
+      <p class="muted">Fields start with last week's counts — just update what changed. Views are optional.</p>
+      <div class="card" style="margin-top:14px">
+        <div class="form-grid">
+          <div><label class="f" for="fDate">Week of</label><input type="date" id="fDate"></div>
+          <div><label class="f" for="fYt">YouTube subs</label><input type="number" id="fYt" min="0" inputmode="numeric"></div>
+          <div><label class="f" for="fTt">TikTok followers</label><input type="number" id="fTt" min="0" inputmode="numeric"></div>
+          <div><label class="f" for="fIg">Instagram followers</label><input type="number" id="fIg" min="0" inputmode="numeric"></div>
+        </div>
+        <div class="subhead">Lifetime views <span style="text-transform:none;letter-spacing:0;color:var(--taupe)">— optional, leave blank to skip</span></div>
+        <div class="form-grid one-up">
+          <div><label class="f" for="fYtV">YouTube views</label><input type="number" id="fYtV" min="0" inputmode="numeric" placeholder="—"></div>
+        </div>
+        <div style="margin-top:14px"><label class="f" for="fNotes">Notes <span style="text-transform:none;letter-spacing:0">(optional)</span></label><input type="text" id="fNotes" placeholder="e.g. street reading short took off"></div>
+        <div class="form-actions">
+          <button class="btn" id="saveBtn">Save week</button>
+          <button class="btn ghost hidden" id="deleteBtn">Delete this week</button>
+          <span class="editing-tag hidden" id="editTag">editing an existing week</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <span class="eyebrow">The long view</span>
+      <h2>Growth over time</h2>
+      <div class="chips" id="platformChips"></div>
+      <div class="card chart-card"><span class="eyebrow" style="margin-bottom:2px">Followers</span><div class="chart-wrap"><canvas id="lineChart"></canvas></div></div>
+      <div class="card chart-card"><span class="eyebrow" style="margin-bottom:2px">New followers gained per month</span><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
+      <div class="card chart-card hidden" id="viewsChartCard"><span class="eyebrow" style="margin-bottom:2px">Views gained per week</span><div class="chart-wrap"><canvas id="viewsChart"></canvas></div></div>
+    </section>
+
+    <section>
+      <span class="eyebrow">Bests &amp; averages</span>
+      <h2>What the numbers say</h2>
+      <div class="grid records" id="recordsGrid"></div>
+    </section>
+
+    <section>
+      <span class="eyebrow">Every Thursday so far</span>
+      <h2>History</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Week of</th><th>YouTube</th><th>TikTok</th><th>Instagram</th><th>YT views</th></tr></thead>
+        <tbody id="historyBody"></tbody>
+      </table></div>
+    </section>
+
+  </div>
+
 </main>
 
 <footer>
@@ -390,9 +386,12 @@ const SEED = [["2025-02-27",25,14,4,null],["2025-03-06",34,49,7,null],["2025-03-
 /*STATS-CORE-START*/
 const PLATFORMS = [
   {key:'youtube',   viewKey:'youtube_views',   label:'YouTube',   color:'#C26F63'},
-  {key:'tiktok',    viewKey:'tiktok_views',    label:'TikTok',    color:'#3A2F2C'},
-  {key:'instagram', viewKey:'instagram_views', label:'Instagram', color:'#8C6F68'}
+  {key:'tiktok',    viewKey:null,              label:'TikTok',    color:'#3A2F2C'},
+  {key:'instagram', viewKey:null,              label:'Instagram', color:'#8C6F68'}
 ];
+/* TikTok and Instagram don't report lifetime views far enough back, so only
+   YouTube views are logged. A null viewKey leaves those stats empty. */
+const VIEW_PLATFORMS = PLATFORMS.filter(p => p.viewKey);
 const STAGES = [
   {key:'agreed', label:'Agreed'},
   {key:'booked', label:'Booked'}
@@ -657,26 +656,12 @@ function renderHero(s){
 }
 
 function renderViews(s){
-  const grid = $('viewsGrid'), empty = $('viewsEmpty');
-  grid.innerHTML = '';
-  if(!s.hasViews){ grid.classList.add('hidden'); empty.classList.remove('hidden'); return; }
-  grid.classList.remove('hidden'); empty.classList.add('hidden');
-  for(const p of PLATFORMS){
-    const v = s.views[p.key];
-    grid.insertAdjacentHTML('beforeend', `
-      <div class="card">
-        <div class="stat-label"><span class="dot" style="display:inline-block;background:${p.color};margin-right:6px"></span>${p.label} views</div>
-        <div class="stat-num">${compact(v.current)}</div>
-        <div>${v.lastGain != null ? deltaHtml(v.lastGain,'delta',compact) + ' <span class="muted">this week</span>'
-              : '<span class="muted">' + (v.weeksLogged ? 'first week logged' : 'not logged yet') + '</span>'}</div>
-      </div>`);
-  }
-  grid.insertAdjacentHTML('beforeend', `
-    <div class="card" style="background:var(--dark);border-color:var(--dark)">
-      <div class="stat-label" style="color:var(--blush-deep)">All platforms</div>
-      <div class="stat-num" style="color:var(--cream)">${compact(s.totalViewsNow)}</div>
-      <div><span style="color:#B9A49D;font-size:.85rem">total views</span></div>
-    </div>`);
+  const el = $('viewsCounter');
+  const v = s.views.youtube;
+  if(!v || v.current == null){ el.classList.add('hidden'); el.innerHTML = ''; return; }
+  el.classList.remove('hidden');
+  el.innerHTML = `YouTube views<span class="vc-num">${compact(v.current)}</span>`
+    + (v.lastGain != null ? deltaHtml(v.lastGain,'delta',compact) + ' <span class="muted">this week</span>' : '');
 }
 
 function renderRecords(s){
@@ -708,8 +693,7 @@ function renderTable(s){
     const i = byDate[r.week_date];
     const prev = i > 0 ? rows[i-1] : null;
     const cell = k => `${num(r[k])}${prev ? deltaHtml(r[k]-prev[k],'g') : ''}`;
-    const anyV = r.youtube_views != null || r.tiktok_views != null || r.instagram_views != null;
-    const vCell = anyV ? PLATFORMS.map(p => compact(r[p.viewKey])).join(' / ') : '<span style="color:var(--taupe)">—</span>';
+    const vCell = r.youtube_views != null ? compact(r.youtube_views) : '<span style="color:var(--taupe)">—</span>';
     const badge = r.needs_review ? ' <span class="tag review">check</span>' : (r.auto_at ? ' <span class="tag auto">auto</span>' : '');
     body.insertAdjacentHTML('beforeend', `
       <tr class="wk-row" onclick="toggleNote('${r.week_date}')">
@@ -764,14 +748,14 @@ function renderCharts(s){
       scales:{x:{grid:{display:false}}, y:{ticks:{precision:0}}} }
   });
 
-  const vLabels = [...new Set(PLATFORMS.flatMap(p => s.views[p.key].series.map(g => g.date)))].sort();
+  const vLabels = [...new Set(VIEW_PLATFORMS.flatMap(p => s.views[p.key].series.map(g => g.date)))].sort();
   const card = $('viewsChartCard');
   if(vLabels.length){
     card.classList.remove('hidden');
     if(viewsChart) viewsChart.destroy();
     viewsChart = new Chart($('viewsChart'), {
       type:'bar',
-      data:{labels: vLabels.map(fmtDate), datasets: PLATFORMS.map(p => {
+      data:{labels: vLabels.map(fmtDate), datasets: VIEW_PLATFORMS.map(p => {
         const m = {}; s.views[p.key].series.forEach(g => m[g.date] = g.gain);
         return {label:p.label, data: vLabels.map(d => m[d] ?? null),
                 backgroundColor: p.color + 'CC', borderRadius:3, hidden: !visible[p.key]};
@@ -808,8 +792,6 @@ function resetForm(){
   $('fTt').value = last ? last.tiktok : '';
   $('fIg').value = last ? last.instagram : '';
   $('fYtV').value = last && last.youtube_views   != null ? last.youtube_views   : '';
-  $('fTtV').value = last && last.tiktok_views    != null ? last.tiktok_views    : '';
-  $('fIgV').value = last && last.instagram_views != null ? last.instagram_views : '';
   $('fNotes').value = '';
 }
 function editWeek(date){
@@ -819,8 +801,6 @@ function editWeek(date){
   $('fDate').value = r.week_date;
   $('fYt').value = r.youtube; $('fTt').value = r.tiktok; $('fIg').value = r.instagram;
   $('fYtV').value = r.youtube_views   != null ? r.youtube_views   : '';
-  $('fTtV').value = r.tiktok_views    != null ? r.tiktok_views    : '';
-  $('fIgV').value = r.instagram_views != null ? r.instagram_views : '';
   $('fNotes').value = r.notes || '';
   $('editTag').classList.remove('hidden'); $('deleteBtn').classList.remove('hidden');
   $('saveBtn').textContent = 'Update week';
@@ -837,7 +817,7 @@ async function saveWeek(){
   if(!week_date || isNaN(youtube) || isNaN(tiktok) || isNaN(instagram)){ toast('Please fill the date and all three follower numbers'); return; }
   const existing = rows.find(r => r.week_date === week_date);
   const rec = {week_date, youtube, tiktok, instagram,
-    youtube_views: vNum('fYtV'), tiktok_views: vNum('fTtV'), instagram_views: vNum('fIgV'),
+    youtube_views: vNum('fYtV'),
     notes: $('fNotes').value.trim() || null,
     auto_at: existing ? (existing.auto_at ?? null) : null,
     needs_review: false};   /* you've now looked at it */
