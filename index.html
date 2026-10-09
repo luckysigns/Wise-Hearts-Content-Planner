@@ -329,7 +329,7 @@ footer p{font-size:.8rem;color:#B9A49D;margin-left:auto}
       <div class="chips" id="platformChips"></div>
       <div class="card chart-card"><span class="eyebrow" style="margin-bottom:2px">Followers</span><div class="chart-wrap"><canvas id="lineChart"></canvas></div></div>
       <div class="card chart-card"><span class="eyebrow" style="margin-bottom:2px">New followers gained per month</span><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
-      <div class="card chart-card hidden" id="viewsChartCard"><span class="eyebrow" style="margin-bottom:2px">YouTube views gained since you started logging</span><p class="muted" id="viewsAvgNote" style="font-size:.88rem;margin-top:2px"></p><div class="chart-wrap"><canvas id="viewsChart"></canvas></div></div>
+      <div class="card chart-card hidden" id="viewsChartCard"><span class="eyebrow" style="margin-bottom:2px">YouTube total views</span><p class="muted" id="viewsAvgNote" style="font-size:.88rem;margin-top:2px"></p><div class="chart-wrap"><canvas id="viewsChart"></canvas></div></div>
     </section>
 
     <section>
@@ -755,37 +755,32 @@ function renderCharts(s){
       scales:{x:{grid:{display:false}}, y:{ticks:{precision:0}}} }
   });
 
-  /* Views gained since the first entry, climbing from zero, across every
-     Thursday. Missed weeks are bridged, and the dashed line is the steady
-     average pace between the first and latest entry. */
+  /* Lifetime views on the same Thursdays as the follower chart, starting from
+     zero at the first week. Dots mark the weeks views were actually entered;
+     the line between them is bridged. */
   const card = $('viewsChartCard');
-  const vp = VIEW_PLATFORMS.filter(p => s.views[p.key].weeksLogged > 1);
+  const vp = VIEW_PLATFORMS.filter(p => s.views[p.key].weeksLogged > 0);
   if(vp.length){
     card.classList.remove('hidden');
     const v0 = s.views[vp[0].key];
-    $('viewsAvgNote').innerHTML = `About <strong>${compact(Math.round(v0.avgWeekly))}</strong> new views a week on average since ${fmtDate(v0.first.week_date)}`;
-    const vRows = rows.filter(r => r.week_date >= v0.first.week_date);
-    const lastDate = Math.max(...vp.map(p => { const g = s.views[p.key].series; return +new Date(g[g.length-1].date); }));
+    $('viewsAvgNote').innerHTML = `<strong>${num(v0.current)}</strong> total views`
+      + (v0.avgWeekly != null ? ` · about <strong>${compact(Math.round(v0.avgWeekly))}</strong> new a week since you started logging views on ${fmtDate(v0.first.week_date)}` : '');
     if(viewsChart) viewsChart.destroy();
     viewsChart = new Chart($('viewsChart'), {
       type:'line',
-      data:{labels: vRows.map(r => r.week_date), datasets: vp.flatMap(p => {
-        const v = s.views[p.key], start = new Date(v.first.week_date);
-        return [
-          {label:p.label + ' views gained', data: vRows.map(r => r[p.viewKey] != null ? r[p.viewKey] - v.first[p.viewKey] : null), spanGaps:true,
-           borderColor:p.color, backgroundColor:p.color + '22', fill:'origin',
-           tension:.3, pointRadius: vRows.map(r => r[p.viewKey] != null ? 2.5 : 0), pointHitRadius:12, borderWidth:2.2, hidden: !visible[p.key]},
-          {label:'Average pace', data: vRows.map(r => +new Date(r.week_date) > lastDate ? null
-              : Math.round(v.avgWeekly * (new Date(r.week_date) - start) / (7*864e5))),
-           borderColor:p.color + '99', borderDash:[5,5], borderWidth:1.5, pointRadius:0, pointHitRadius:0, fill:false, hidden: !visible[p.key]}
-        ];
-      })},
-      options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
+      data:{labels, datasets: vp.map(p => ({
+        label:p.label + ' views',
+        data: rows.map((r,i) => r[p.viewKey] != null ? r[p.viewKey] : (i === 0 ? 0 : null)), spanGaps:true,
+        borderColor:p.color, backgroundColor:p.color + '22', fill:'origin',
+        tension:.3, pointRadius: rows.map(r => r[p.viewKey] != null ? 3 : 0),
+        pointHitRadius: rows.map(r => r[p.viewKey] != null ? 12 : 0), borderWidth:2.2, hidden: !visible[p.key]
+      }))},
+      options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'nearest', axis:'x', intersect:false},
         plugins:{legend:{display:false},
-          tooltip:{backgroundColor:'#2E2522', filter: it => it.raw != null,
-            callbacks:{ title: items => fmtDate(items[0].label), label: it => ` ${it.dataset.label}: +${num(it.raw)}` } } },
+          tooltip:{backgroundColor:'#2E2522', filter: it => it.raw != null && it.dataIndex > 0,
+            callbacks:{ title: items => fmtDate(items[0].label), label: it => ` ${it.dataset.label}: ${num(it.raw)}` } } },
         scales:{
-          x:{ ticks:{ maxTicksLimit:8, callback: function(v){ return new Date(this.getLabelForValue(v) + 'T12:00').toLocaleDateString('en-US',{month:'short', day:'numeric'}); } }, grid:{display:false} },
+          x:{ ticks:{ maxTicksLimit:10, callback: function(v){ return fmtMonthShort(this.getLabelForValue(v).slice(0,7)); } }, grid:{display:false} },
           y:{ beginAtZero:true, ticks:{callback: v => compact(v)} }
         } }
     });
