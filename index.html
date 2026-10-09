@@ -329,7 +329,7 @@ footer p{font-size:.8rem;color:#B9A49D;margin-left:auto}
       <div class="chips" id="platformChips"></div>
       <div class="card chart-card"><span class="eyebrow" style="margin-bottom:2px">Followers</span><div class="chart-wrap"><canvas id="lineChart"></canvas></div></div>
       <div class="card chart-card"><span class="eyebrow" style="margin-bottom:2px">New followers gained per month</span><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
-      <div class="card chart-card hidden" id="viewsChartCard"><span class="eyebrow" style="margin-bottom:2px">Views gained per week</span><div class="chart-wrap"><canvas id="viewsChart"></canvas></div></div>
+      <div class="card chart-card hidden" id="viewsChartCard"><span class="eyebrow" style="margin-bottom:2px">YouTube views gained since you started logging</span><p class="muted" id="viewsAvgNote" style="font-size:.88rem;margin-top:2px"></p><div class="chart-wrap"><canvas id="viewsChart"></canvas></div></div>
     </section>
 
     <section>
@@ -471,20 +471,26 @@ function computeStats(rows){
     s.totalNow += vals[vals.length-1];
     s.totalFirst += vals[0];
 
-    /* views — only weeks where a number was actually entered */
+    /* views — only weeks where a number was actually entered. Entries are
+       irregular, so each gain is spread over the weeks it actually covers. */
     const logged = rows.filter(r => r[p.viewKey] != null);
+    const weeksApart = (a, b) => Math.max(1, Math.round((new Date(b) - new Date(a)) / (7*864e5)));
     const vGains = [];
     for(let j=1; j<logged.length; j++){
-      vGains.push({date: logged[j].week_date, gain: logged[j][p.viewKey] - logged[j-1][p.viewKey]});
+      const gain = logged[j][p.viewKey] - logged[j-1][p.viewKey];
+      const weeks = weeksApart(logged[j-1].week_date, logged[j].week_date);
+      vGains.push({date: logged[j].week_date, gain, weeks, perWeek: gain / weeks});
     }
     let bestVWeek = null;
-    for(const g of vGains){ if(!bestVWeek || g.gain > bestVWeek.gain) bestVWeek = g; }
+    for(const g of vGains){ if(!bestVWeek || g.perWeek > bestVWeek.perWeek) bestVWeek = g; }
+    const vFirst = logged[0], vLast = logged[logged.length-1];
     s.views[p.key] = {
-      current: logged.length ? logged[logged.length-1][p.viewKey] : null,
+      current: logged.length ? vLast[p.viewKey] : null,
       weeksLogged: logged.length,
-      lastGain: vGains.length ? vGains[vGains.length-1].gain : null,
-      avgWeekly: mean(vGains.map(g => g.gain)),
+      lastGain: vGains.length ? vGains[vGains.length-1] : null,
+      avgWeekly: logged.length > 1 ? (vLast[p.viewKey] - vFirst[p.viewKey]) / weeksApart(vFirst.week_date, vLast.week_date) : null,
       bestWeek: bestVWeek,
+      first: vFirst || null,
       series: vGains
     };
     if(logged.length) s.hasViews = true;
@@ -662,7 +668,7 @@ function renderViews(s){
   if(!v || v.current == null){ el.classList.add('hidden'); el.innerHTML = ''; return; }
   el.classList.remove('hidden');
   el.innerHTML = `YouTube views<span class="vc-num">${compact(v.current)}</span>`
-    + (v.lastGain != null ? deltaHtml(v.lastGain,'delta',compact) + ' <span class="muted">this week</span>' : '');
+    + (v.lastGain ? deltaHtml(v.lastGain.gain,'delta',compact) + ` <span class="muted">${v.lastGain.weeks > 1 ? 'over the last ' + v.lastGain.weeks + ' weeks' : 'this week'}</span>` : '');
 }
 
 function renderRecords(s){
@@ -672,7 +678,7 @@ function renderRecords(s){
     const v = s.views[p.key];
     const viewRows = v.weeksLogged > 1 ? `
         <div class="rec-row"><span class="k">Views per week</span><span class="v">${compact(Math.round(v.avgWeekly))} avg</span></div>
-        <div class="rec-row"><span class="k">Best views week</span><span class="v">${v.bestWeek ? fmtDate(v.bestWeek.date) + ' · +' + compact(v.bestWeek.gain) : '—'}</span></div>` : '';
+        <div class="rec-row"><span class="k">Best views week</span><span class="v">${v.bestWeek ? fmtDate(v.bestWeek.date) + ' · +' + compact(Math.round(v.bestWeek.perWeek)) + (v.bestWeek.weeks > 1 ? ' /wk' : '') : '—'}</span></div>` : '';
     grid.insertAdjacentHTML('beforeend', `
       <div class="card">
         <div class="rec-head"><span class="dot" style="background:${p.color}"></span><h3>${p.label}</h3></div>
@@ -749,21 +755,39 @@ function renderCharts(s){
       scales:{x:{grid:{display:false}}, y:{ticks:{precision:0}}} }
   });
 
-  const vLabels = [...new Set(VIEW_PLATFORMS.flatMap(p => s.views[p.key].series.map(g => g.date)))].sort();
+  /* Views gained since the first entry, climbing from zero, across every
+     Thursday. Missed weeks are bridged, and the dashed line is the steady
+     average pace between the first and latest entry. */
   const card = $('viewsChartCard');
-  if(vLabels.length){
+  const vp = VIEW_PLATFORMS.filter(p => s.views[p.key].weeksLogged > 1);
+  if(vp.length){
     card.classList.remove('hidden');
+    const v0 = s.views[vp[0].key];
+    $('viewsAvgNote').innerHTML = `About <strong>${compact(Math.round(v0.avgWeekly))}</strong> new views a week on average since ${fmtDate(v0.first.week_date)}`;
+    const vRows = rows.filter(r => r.week_date >= v0.first.week_date);
+    const lastDate = Math.max(...vp.map(p => { const g = s.views[p.key].series; return +new Date(g[g.length-1].date); }));
     if(viewsChart) viewsChart.destroy();
     viewsChart = new Chart($('viewsChart'), {
-      type:'bar',
-      data:{labels: vLabels.map(fmtDate), datasets: VIEW_PLATFORMS.map(p => {
-        const m = {}; s.views[p.key].series.forEach(g => m[g.date] = g.gain);
-        return {label:p.label, data: vLabels.map(d => m[d] ?? null),
-                backgroundColor: p.color + 'CC', borderRadius:3, hidden: !visible[p.key]};
+      type:'line',
+      data:{labels: vRows.map(r => r.week_date), datasets: vp.flatMap(p => {
+        const v = s.views[p.key], start = new Date(v.first.week_date);
+        return [
+          {label:p.label + ' views gained', data: vRows.map(r => r[p.viewKey] != null ? r[p.viewKey] - v.first[p.viewKey] : null), spanGaps:true,
+           borderColor:p.color, backgroundColor:p.color + '22', fill:'origin',
+           tension:.3, pointRadius: vRows.map(r => r[p.viewKey] != null ? 2.5 : 0), pointHitRadius:12, borderWidth:2.2, hidden: !visible[p.key]},
+          {label:'Average pace', data: vRows.map(r => +new Date(r.week_date) > lastDate ? null
+              : Math.round(v.avgWeekly * (new Date(r.week_date) - start) / (7*864e5))),
+           borderColor:p.color + '99', borderDash:[5,5], borderWidth:1.5, pointRadius:0, pointHitRadius:0, fill:false, hidden: !visible[p.key]}
+        ];
       })},
-      options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{legend:{display:false}, tooltip:{backgroundColor:'#2E2522'}},
-        scales:{x:{grid:{display:false}}, y:{ticks:{callback: v => compact(v)}}} }
+      options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
+        plugins:{legend:{display:false},
+          tooltip:{backgroundColor:'#2E2522', filter: it => it.raw != null,
+            callbacks:{ title: items => fmtDate(items[0].label), label: it => ` ${it.dataset.label}: +${num(it.raw)}` } } },
+        scales:{
+          x:{ ticks:{ maxTicksLimit:8, callback: function(v){ return new Date(this.getLabelForValue(v) + 'T12:00').toLocaleDateString('en-US',{month:'short', day:'numeric'}); } }, grid:{display:false} },
+          y:{ beginAtZero:true, ticks:{callback: v => compact(v)} }
+        } }
     });
   } else { card.classList.add('hidden'); }
   renderChips();
